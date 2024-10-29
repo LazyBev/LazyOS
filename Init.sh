@@ -7,6 +7,8 @@
 LC_ALL=C 
 PATH=/usr/bin:/bin
 
+[ "$(whoami)" = "root" ] || echo "Please run this as root" && exit $? &>/dev/null
+
 bail() { echo "FATAL: $1"; exit 1; }
 grep --version > /dev/null 2> /dev/null || bail "grep does not work"
 sed '' /dev/null || bail "sed does not work"
