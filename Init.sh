@@ -188,6 +188,4 @@ case $(uname -m) in
   x86_64) chown -v lfs $LFS/lib64 ;;
 esac
 
-su - lfs -c "cat > ~/.bash_profile << "EOF"
-exec env -i HOME=$HOME TERM=$TERM PS1='\u:\w\$ ' /bin/bash
-EOF"
+su - lfs -c "chmod +x ./Setup.sh && ./Setup.sh"
