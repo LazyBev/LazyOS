@@ -1,3 +1,13 @@
+#!/bin/bash
+
+set -eau
+
+#Variables
+LFS=/mnt/lfs
+LFS_TGT=$(uname -m)-lfs-linux-gnu
+LC_ALL=C 
+PATH=/usr/bin:/bin
+
 cat > ~/.bash_profile << "EOF"
 exec env -i HOME=$HOME TERM=$TERM PS1='\u:\w\$ ' /bin/bash
 EOF
