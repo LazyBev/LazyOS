@@ -210,6 +210,95 @@ rm -v $LFS/usr/lib/libmagic.la
 cd $LFS/sources
 rm -rf *.tar.xz
 
+# Findutils
+tar -xf findutils*.tar.xz && cd findutils*/
+./configure --prefix=/usr                   \
+            --localstatedir=/var/lib/locate \
+            --host=$LFS_TGT                 \
+            --build=$(build-aux/config.guess)
+make -j$(nproc) && make DESTDIR=$LFS install
+cd $LFS/sources
+rm -rf findutils*.tar.xz
+
+# Gawk
+tar -xf gawk*.tar.xz && cd gawk*/
+sed -i 's/extras//' Makefile.in
+./configure --prefix=/usr   \
+            --host=$LFS_TGT \
+            --build=$(build-aux/config.guess)
+make -j$(nproc) && make DESTDIR=$LFS install
+cd $LFS/sources
+rm -rf gawk*.tar.xz
+
+# 
+tar -xf *.tar.xz && cd */
+./configure
+make -j$(nproc) && make DESTDIR=$LFS install
+cd $LFS/sources
+rm -rf *.tar.xz
+
+# 
+tar -xf *.tar.xz && cd */
+./configure
+make -j$(nproc) && make DESTDIR=$LFS install
+cd $LFS/sources
+rm -rf *.tar.xz
+
+# 
+tar -xf *.tar.xz && cd */
+./configure
+make -j$(nproc) && make DESTDIR=$LFS install
+cd $LFS/sources
+rm -rf *.tar.xz
+
+# 
+tar -xf *.tar.xz && cd */
+./configure
+make -j$(nproc) && make DESTDIR=$LFS install
+cd $LFS/sources
+rm -rf *.tar.xz
+
+# 
+tar -xf *.tar.xz && cd */
+./configure
+make -j$(nproc) && make DESTDIR=$LFS install
+cd $LFS/sources
+rm -rf *.tar.xz
+
+# 
+tar -xf *.tar.xz && cd */
+./configure
+make -j$(nproc) && make DESTDIR=$LFS install
+cd $LFS/sources
+rm -rf *.tar.xz
+
+# 
+tar -xf *.tar.xz && cd */
+./configure
+make -j$(nproc) && make DESTDIR=$LFS install
+cd $LFS/sources
+rm -rf *.tar.xz
+
+# 
+tar -xf *.tar.xz && cd */
+./configure
+make -j$(nproc) && make DESTDIR=$LFS install
+cd $LFS/sources
+rm -rf *.tar.xz
+
+# 
+tar -xf *.tar.xz && cd */
+./configure
+make -j$(nproc) && make DESTDIR=$LFS install
+cd $LFS/sources
+rm -rf *.tar.xz
+
+# 
+tar -xf *.tar.xz && cd */
+./configure
+make -j$(nproc) && make DESTDIR=$LFS install
+cd $LFS/sources
+rm -rf *.tar.xz
 
 # 
 tar -xf *.tar.xz && cd */
