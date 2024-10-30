@@ -32,7 +32,7 @@ source ~/.bash_profile
 cd $LFS/sources 
 
 # Binutils
-tar -xJf binutils*.tar.xz && cd binutils*/ 
+tar -xvJf binutils*.tar.xz && cd binutils*/ 
 mkdir -v build && cd build
 ../configure --prefix=$LFS/tools \
              --with-sysroot=$LFS \
@@ -46,10 +46,10 @@ make -j$(nproc) && make install
 cd $LFS/sources
 
 # Gcc
-tar -xJf gcc*.tar.xz && cd gcc*/
-tar -xJf ../mpfr-4.2.1.tar.xz && mv -v mpfr-4.2.1 mpfr
-tar -xJf ../gmp-6.3.0.tar.xz && mv -v gmp-6.3.0 gmp
-tar -xzf ../mpc-1.3.1.tar.gz && mv -v mpc-1.3.1 mpc
+tar -xvJf gcc*.tar.xz && cd gcc*/
+tar -xvJf ../mpfr-4.2.1.tar.xz && mv -v mpfr-4.2.1 mpfr
+tar -xvJf ../gmp-6.3.0.tar.xz && mv -v gmp-6.3.0 gmp
+tar -xvzf ../mpc-1.3.1.tar.gz && mv -v mpc-1.3.1 mpc
 
 case $(uname -m) in
   x86_64)
@@ -86,7 +86,7 @@ cd $LFS/sources
 
 
 # Libstdc++
-tar -xJf gcc*.tar.xz && cd gcc*/
+tar -xvJf gcc*.tar.xz && cd gcc*/
 mkdir -v build && cd build
 ../libstdc++-v3/configure           \
     --host=$LFS_TGT                 \
@@ -101,20 +101,20 @@ rm -v $LFS/usr/lib/lib{stdc++{,exp,fs},supc++}.la
 cd $LFS/sources 
 
 # Linux kernel
-tar -xJf linux*.tar.xz && cd linux*/
+tar -xvJf linux*.tar.xz && cd linux*/
 make mrproper && make headers
 find usr/include -type f ! -name '*.h' -delete
 cp -rv usr/include $LFS/usr
 cd $LFS/sources 
 
 # Glibc
-tar -xJf glibc*.tar.xz && cd glibc*/
+tar -xvJf glibc*.tar.xz && cd glibc*/
 
 case $(uname -m) in
     i?86)   ln -sfv ld-linux.so.2 $LFS/lib/ld-lsb.so.3
     ;;
-    x86_64) ln -sfv ../lib/ld-linux-x86-64.so.2 $LFS/lib64
-            ln -sfv ../lib/ld-linux-x86-64.so.2 $LFS/lib64/ld-lsb-x86-64.so.3
+    x86_64) ln -sfv ../lib/ld-linux-xv86-64.so.2 $LFS/lib64
+            ln -sfv ../lib/ld-linux-xv86-64.so.2 $LFS/lib64/ld-lsb-xv86-64.so.3
     ;;
 esac
 
@@ -132,13 +132,13 @@ echo "rootsbindir=/usr/sbin" > configparms
 make -j$(nproc) && make DESTDIR=$LFS install
 
 sed '/RTLDLIST=/s@/usr@@g' -i $LFS/usr/bin/ldd
-echo 'int main(){}' | $LFS_TGT-gcc -xc -
+echo 'int main(){}' | $LFS_TGT-gcc -xvc -
 readelf -l a.out | grep ld-linux
 rm -v a.out
 cd $LFS/sources 
 
 # M4
-tar -xJf m4*.tar.xz && cd m4*/
+tar -xvJf m4*.tar.xz && cd m4*/
 ./configure --prefix=/usr   \
             --host=$LFS_TGT \
             --build=$(build-aux/config.guess)
@@ -146,7 +146,7 @@ make -j$(nproc) && make DESTDIR=$LFS install
 cd $LFS/sources
 
 # Ncurses
-tar -xJf ncurses*.tar.xz && cd ncurses*/
+tar -xvJf ncurses*.tar.xz && cd ncurses*/
 sed -i s/mawk// configure
 mkdir -v build
 pushd build
@@ -171,7 +171,7 @@ sed -e 's/^#if.*XOPEN.*$/#if 1/' -i $LFS/usr/include/curses.h
 cd $LFS/sources
 
 # Bash
-tar -xzf bash*.tar.gz && cd bash*/
+tar -xvzf bash*.tar.gz && cd bash*/
 ./configure --prefix=/usr                      \
             --build=$(sh support/config.guess) \
             --host=$LFS_TGT                    \
@@ -182,7 +182,7 @@ ln -sv bash $LFS/bin/sh
 cd $LFS/sources
 
 # Coreutils
-tar -xJf coreutils*.tar.xz && cd coreutils*/
+tar -xvJf coreutils*.tar.xz && cd coreutils*/
 ./configure --prefix=/usr                     \
             --host=$LFS_TGT                   \
             --build=$(build-aux/config.guess) \
@@ -196,7 +196,7 @@ sed -i 's/"1"/"8"/' $LFS/usr/share/man/man8/chroot.8
 cd $LFS/sources
 
 # Diffutils
-tar -xJf diffutils*.tar.xz && cd diffutils*/
+tar -xvJf diffutils*.tar.xz && cd diffutils*/
 ./configure --prefix=/usr   \
             --host=$LFS_TGT \
             --build=$(./build-aux/config.guess)
@@ -204,12 +204,12 @@ make -j$(nproc) && make DESTDIR=$LFS install
 cd $LFS/sources
 
 # File
-tar -xzf file*.tar.gz && cd file*/
+tar -xvzf file*.tar.gz && cd file*/
 mkdir build
 pushd build
     ../configure --disable-bzlib      \
                  --disable-libseccomp \
-                 --disable-xzlib      \
+                 --disable-xvzlib      \
                  --disable-zlib
     make
 popd
@@ -219,7 +219,7 @@ rm -v $LFS/usr/lib/libmagic.la
 cd $LFS/sources
 
 # Findutils
-tar -xJf findutils*.tar.xz && cd findutils*/
+tar -xvJf findutils*.tar.xz && cd findutils*/
 ./configure --prefix=/usr                   \
             --localstatedir=/var/lib/locate \
             --host=$LFS_TGT                 \
@@ -228,7 +228,7 @@ make -j$(nproc) && make DESTDIR=$LFS install
 cd $LFS/sources
 
 # Gawk
-tar -xJf gawk*.tar.xz && cd gawk*/
+tar -xvJf gawk*.tar.xz && cd gawk*/
 sed -i 's/extras//' Makefile.in
 ./configure --prefix=/usr   \
             --host=$LFS_TGT \
@@ -237,7 +237,7 @@ make -j$(nproc) && make DESTDIR=$LFS install
 cd $LFS/sources
 
 # Grep
-tar -xJf grep*.tar.xz && cd grep*/
+tar -xvJf grep*.tar.xz && cd grep*/
 ./configure --prefix=/usr   \
             --host=$LFS_TGT \
             --build=$(./build-aux/config.guess)
@@ -245,13 +245,13 @@ make -j$(nproc) && make DESTDIR=$LFS install
 cd $LFS/sources
 
 # Gzip
-tar -xJf gzip*.tar.xz && cd gzip*/
+tar -xvJf gzip*.tar.xz && cd gzip*/
 ./configure --prefix=/usr --host=$LFS_TGT
 make -j$(nproc) && make DESTDIR=$LFS install
 cd $LFS/sources
 
 # Make
-tar -xzf make*.tar.gz && cd make*/
+tar -xvzf make*.tar.gz && cd make*/
 ./configure --prefix=/usr   \
             --without-guile \
             --host=$LFS_TGT \
@@ -260,13 +260,13 @@ make -j$(nproc) && make DESTDIR=$LFS install
 cd $LFS/sources
 
 # Patch
-tar -xJf patch*.tar.xz && cd patch*/
+tar -xvJf patch*.tar.xz && cd patch*/
 ./configure
 make -j$(nproc) && make DESTDIR=$LFS install
 cd $LFS/sources
 
 # Sed
-tar -xJf sed*.tar.xz && cd sed*/
+tar -xvJf sed*.tar.xz && cd sed*/
 ./configure --prefix=/usr   \
             --host=$LFS_TGT \
             --build=$(./build-aux/config.guess)
@@ -274,7 +274,7 @@ make -j$(nproc) && make DESTDIR=$LFS install
 cd $LFS/sources
 
 # Tar
-tar -xJf tar*.tar.xz && cd tar*/
+tar -xvJf tar*.tar.xz && cd tar*/
 ./configure --prefix=/usr                     \
             --host=$LFS_TGT                   \
             --build=$(build-aux/config.guess)
@@ -282,7 +282,7 @@ make -j$(nproc) && make DESTDIR=$LFS install
 cd $LFS/sources
 
 # Xz
-tar -xJf xz*.tar.xz && cd xz*/
+tar -xvJf xz*.tar.xz && cd xz*/
 ./configure --prefix=/usr                     \
             --host=$LFS_TGT                   \
             --build=$(build-aux/config.guess) \
@@ -293,7 +293,7 @@ rm -v $LFS/usr/lib/liblzma.la
 cd $LFS/sources
 
 # Binutils pass 2
-tar -xJf binutils*.tar.xz && cd binutils*/
+tar -xvJf binutils*.tar.xz && cd binutils*/
 sed '6009s/$add_dir//' -i ltmain.sh
 mkdir -v build && cd build
 ../configure --prefix=/usr              \
@@ -311,10 +311,10 @@ rm -v $LFS/usr/lib/lib{bfd,ctf,ctf-nobfd,opcodes,sframe}.{a,la}
 cd $LFS/sources
 
 # Gcc pass 2
-tar -xJf gcc*.tar.xz && cd gcc*/
-tar -xJf ../mpfr-4.2.1.tar.xz && mv -v mpfr-4.2.1 mpfr
-tar -xJf ../gmp-6.3.0.tar.xz && mv -v gmp-6.3.0 gmp
-tar -xzf ../mpc-1.3.1.tar.gz && mv -v mpc-1.3.1 mpc
+tar -xvJf gcc*.tar.xz && cd gcc*/
+tar -xvJf ../mpfr-4.2.1.tar.xz && mv -v mpfr-4.2.1 mpfr
+tar -xvJf ../gmp-6.3.0.tar.xz && mv -v gmp-6.3.0 gmp
+tar -xvzf ../mpc-1.3.1.tar.gz && mv -v mpc-1.3.1 mpc
 
 case $(uname -m) in
   x86_64)
