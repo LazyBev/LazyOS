@@ -32,8 +32,8 @@ cd binutils*/ && mkdir -v build
              --enable-default-hash-style=gnu
 make && make install
 
-cd $LFS/sources && tar -xf gcc*
-cd gcc*/ && tar -xf ../mpfr-4.2.1.tar.xz && mv -v mpfr-4.2.1 mpfr
+cd $LFS/sources && tar -xf gcc* && cd gcc*/
+tar -xf ../mpfr-4.2.1.tar.xz && mv -v mpfr-4.2.1 mpfr
 tar -xf ../gmp-6.3.0.tar.xz && mv -v gmp-6.3.0 gmp
 tar -xf ../mpc-1.3.1.tar.gz && mv -v mpc-1.3.1 mpc
 
