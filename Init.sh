@@ -172,6 +172,7 @@ else
 fi
 
 mkdir -pv "$LFS"
+mkdir -v $LFS/home
 mount -v -t ext4 /dev/"$disk$disk_prefix"3 "$LFS"
 mount --mkdir /dev/"$disk$disk_prefix"1 /mnt/boot
 swapon -v /dev/"$disk$disk_prefix"2 || { echo "Failed to enable swap partition" && exit 1; }
