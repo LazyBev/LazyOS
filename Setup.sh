@@ -151,8 +151,8 @@ sed -i s/mawk// configure
 mkdir -v build
 pushd build
     ../configure
-    make -C include
-    make -C progs tic
+    make -j$(nproc) -C include
+    make -j$(nproc) -C progs tic
 popd
 ./configure --prefix=/usr                \
             --host=$LFS_TGT              \
@@ -209,9 +209,9 @@ mkdir build
 pushd build
     ../configure --disable-bzlib      \
                  --disable-libseccomp \
-                 --disable-xvzlib      \
+                 --disable-xvzlib     \
                  --disable-zlib
-    make
+    make -j$(nproc)
 popd
 ./configure --prefix=/usr --host=$LFS_TGT --build=$(./config.guess)
 make -j$(nproc) FILE_COMPILE=$(pwd)/build/src/file && make DESTDIR=$LFS install
