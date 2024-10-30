@@ -158,8 +158,8 @@ else
     exit 1
 fi
 
-mkdir -pv $LFS
-mount -v -t ext4 "$disk$disk_prefix"3 $LFS
+mkdir -pv "$LFS"
+mount -v -t ext4 "$disk$disk_prefix"3 "$LFS"
 mount --mkdir /dev/efi_system_partition /mnt/boot
 swapon -v "$disk$disk_prefix"2 || { echo "Failed to enable swap partition" && exit 1; }
 
@@ -196,4 +196,4 @@ case $(uname -m) in
   x86_64) chown -v lfs $LFS/lib64 ;;
 esac
 
-su - lfs -c "chmod +x ./Setup.sh && ./Setup.sh"
+su - lfs -c "cd /home/lazybev/LazyOS && chmod +x ./Setup.sh && ./Setup.sh"
