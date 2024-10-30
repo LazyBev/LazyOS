@@ -146,3 +146,33 @@ tar -xvJf python*.tar.xz && cd python*/
             --without-ensurepip
 make -j$(nproc) && make install
 cd $LFS_SRC
+
+# Texinfo
+tar -xvJf texinfo*.tar.xz && cd texinfo*/
+./configure --prefix=/usr
+make -j$(nproc) && make install
+cd $LFS_SRC
+
+# Util-linux
+tar -xvJf util-linux*.tar.xz && cd Util-linux*/
+mkdir -pv /var/lib/hwclock
+./configure --libdir=/usr/lib     \
+            --runstatedir=/run    \
+            --disable-chfn-chsh   \
+            --disable-login       \
+            --disable-nologin     \
+            --disable-su          \
+            --disable-setpriv     \
+            --disable-runuser     \
+            --disable-pylibmount  \
+            --disable-static      \
+            --disable-liblastlog2 \
+            --without-python      \
+            ADJTIME_PATH=/var/lib/hwclock/adjtime \
+            --docdir=/usr/share/doc/util-linux-2.40.2
+make -j$(nproc) && make install
+cd $LFS_SRC
+
+rm -rf /usr/share/{info,man,doc}/*
+find /usr/{lib,libexec} -name \*.la -delete
+rm -rf /tools
