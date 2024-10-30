@@ -7,8 +7,8 @@ set +h
 umask 022
 export MAKEFLAGS=-j$(nproc)
 export LFS=/mnt/lfs
-LC_ALL=POSIX
-LFS_TGT=$(uname -m)-lfs-linux-gnu
+export LC_ALL=POSIX
+export LFS_TGT=$(uname -m)-lfs-linux-gnu
 PATH=/usr/bin
 if [ ! -L /bin ]; then PATH=/bin:$PATH; fi
 PATH=$LFS/tools/bin:$PATH
@@ -66,4 +66,5 @@ mkdir -v build && cd build
     --disable-libstdcxx       \
     --enable-languages=c,c++
 make && make install
- 
+cd .. && cat gcc/limitx.h gcc/glimits.h gcc/limity.h > \
+  `dirname $($LFS_TGT-gcc -print-libgcc-file-name)`/include/limits.h
