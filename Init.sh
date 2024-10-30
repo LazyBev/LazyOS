@@ -7,7 +7,6 @@
 LC_ALL=C 
 PATH=/usr/bin:/bin
 
-
 if [ "$(whoami)" = "root" ]; then
     :
 else
@@ -188,7 +187,6 @@ mkdir -pv $LFS/tools
 
 groupadd lfs
 useradd -s /bin/bash -g lfs -m -k /dev/null lfs
-
 passwd lfs
 
 chown -v lfs $LFS/{usr{,/*},lib,var,etc,bin,sbin,tools}
