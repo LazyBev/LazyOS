@@ -3,6 +3,7 @@
 set -eau
 
 #Variables
+export LFS_SRC=$LFS/sources
 export LFS=/mnt/lfs
 export LFS_TGT=$(uname -m)-lfs-linux-gnu
 export LC_ALL=C 
@@ -10,7 +11,7 @@ export PATH=/usr/bin:/bin
 
 chown --from lfs -R root:root $LFS/{usr,lib,var,etc,bin,sbin,tools}
 case $(uname -m) in
-  x86_64) chown --from lfs -R root:root $LFS/lib64 ;;
+	x86_64) chown --from lfs -R root:root $LFS/lib64 ;;
 esac
 
 mkdir -pv $LFS/{dev,proc,sys,run}
@@ -50,10 +51,8 @@ mkdir -pv /var/lib/{color,misc,locate}
 
 ln -sfv /run /var/run
 ln -sfv /run/lock /var/lock
-
 install -dv -m 0750 /root
 install -dv -m 1777 /tmp /var/tmp
-
 ln -sv /proc/self/mounts /etc/mtab
 
 cat > /etc/hosts << EOF
@@ -111,17 +110,39 @@ chmod -v 664  /var/log/lastlog
 chmod -v 600  /var/log/btmp
 
 # Gettext
-pushd /lfs/source
-	tar -xvJf gettext*.tar.xz && cd gettext*/ 
-	./configure --disable-shared
- 	make -j$(nproc)
-  	cp -v gettext-tools/src/{msgfmt,msgmerge,xgettext} /usr/bin
-popd
+cd sources
+tar -xvJf gettext*.tar.xz && cd gettext*/
+./configure --disable-shared
+make -j$(nproc)
+cp -v gettext-tools/src/{msgfmt,msgmerge,xgettext} /usr/bin
+cd $LFS_SRC
 
-# Gettext
-pushd /lfs/source
-	tar -xvJf gettext*.tar.xz && cd gettext*/ 
-	./configure --disable-shared
- 	make -j$(nproc)
-  	cp -v gettext-tools/src/{msgfmt,msgmerge,xgettext} /usr/bin
-popd
+# Bison
+tar -xvJf gettext*.tar.xz && cd gettext*/ 
+./configure --prefix=/usr \
+            --docdir=/usr/share/doc/bison-3.8.2
+make -j$(nproc) && make install
+cd $LFS_SRC
+
+# Perl
+tar -xvJf perl*.tar.xz && cd perl*/ 
+sh Configure -des                                         \
+             -D prefix=/usr                               \
+             -D vendorprefix=/usr                         \
+             -D useshrplib                                \
+             -D privlib=/usr/lib/perl5/5.40/core_perl     \
+             -D archlib=/usr/lib/perl5/5.40/core_perl     \
+             -D sitelib=/usr/lib/perl5/5.40/site_perl     \
+             -D sitearch=/usr/lib/perl5/5.40/site_perl    \
+             -D vendorlib=/usr/lib/perl5/5.40/vendor_perl \
+             -D vendorarch=/usr/lib/perl5/5.40/vendor_perl
+make -j$(nproc) && make install
+cd $LFS_SRC
+
+# Python
+tar -xvJf python*.tar.xz && cd python*/
+./configure --prefix=/usr   \
+            --enable-shared \
+            --without-ensurepip
+make -j$(nproc) && make install
+cd $LFS_SRC
