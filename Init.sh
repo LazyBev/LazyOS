@@ -10,10 +10,10 @@ set -eau
 trap 'echo "An error occurred. Exiting..."; exit 1;' ERR
 
 #Variables
-LFS=/mnt/lfs
-LFS_TGT=$(uname -m)-lfs-linux-gnu
-LC_ALL=C 
-PATH=/usr/bin:/bin
+export LFS=/mnt/lfs
+export LFS_TGT=$(uname -m)-lfs-linux-gnu
+export LC_ALL=C 
+export PATH=/usr/bin:/bin
 
 if [ "$(whoami)" = "root" ]; then
     :
