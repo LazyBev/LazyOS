@@ -346,3 +346,5 @@ mkdir -v build && cd build
 make -j$(nproc) && make DESTDIR=$LFS install
 ln -sv gcc $LFS/usr/bin/cc
 cd $LFS/sources
+
+su - root -c "cd /home/lazybev/LazyOS && chmod +x ./Chroot.sh && ./Chroot.sh"
