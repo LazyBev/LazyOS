@@ -158,9 +158,9 @@ echo 20 # Type for Linux filesystem
 echo w # Write the partition table
 } | fdisk "$disk"
 
-mkfs.vfat -F 32 "$disk$disk_prefix"1 || { echo "Failed to format boot partition" && exit 1; }
-mkfs -v -t ext4 "$disk$disk_prefix"3 || { echo "Failed to format root partition" && exit 1; }
-mkswap "$disk$disk_prefix"2 || { echo "Failed to format swap partition" && exit 1; }
+mkfs.vfat -F 32 /dev/"$disk$disk_prefix"1 || { echo "Failed to format boot partition" && exit 1; }
+mkfs -v -t ext4 /dev/"$disk$disk_prefix"3 || { echo "Failed to format root partition" && exit 1; }
+mkswap /dev/"$disk$disk_prefix"2 || { echo "Failed to format swap partition" && exit 1; }
 
 echo "Partitioning complete!"
 
@@ -172,9 +172,9 @@ else
 fi
 
 mkdir -pv "$LFS"
-mount -v -t ext4 "$disk$disk_prefix"3 "$LFS"
-mount --mkdir /dev/efi_system_partition /mnt/boot
-swapon -v "$disk$disk_prefix"2 || { echo "Failed to enable swap partition" && exit 1; }
+mount -v -t ext4 /dev/"$disk$disk_prefix"3 "$LFS"
+mount --mkdir /dev/"$disk$disk_prefix"1 /mnt/boot
+swapon -v /dev/"$disk$disk_prefix"2 || { echo "Failed to enable swap partition" && exit 1; }
 
 echo "Mounting complete!"
 
