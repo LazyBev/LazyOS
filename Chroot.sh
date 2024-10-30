@@ -180,5 +180,11 @@ mountpoint -q $LFS/dev/shm && umount $LFS/dev/shm
 umount $LFS/dev/pts
 umount $LFS/{sys,proc,run,dev}
 
+echo -e "Making backup..."
+sleep 2
+
 cd $LFS
 tar -cJpf $HOME/lfs-temp-tools-12.2.tar.xz .
+
+echo -e "Anytime you want to use this backup just exit the script and\ntype in 'cd $LFS && rm -rf ./* && tar -xpf $HOME/lfs-temp-tools-12.2.tar.xz'"
+sleep 5
