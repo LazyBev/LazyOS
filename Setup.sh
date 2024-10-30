@@ -230,19 +230,21 @@ make -j$(nproc) && make DESTDIR=$LFS install
 cd $LFS/sources
 rm -rf gawk*.tar.xz
 
-# 
-tar -xf *.tar.xz && cd */
-./configure
+# Grep
+tar -xf grep*.tar.xz && cd grep*/
+./configure --prefix=/usr   \
+            --host=$LFS_TGT \
+            --build=$(./build-aux/config.guess)
 make -j$(nproc) && make DESTDIR=$LFS install
 cd $LFS/sources
-rm -rf *.tar.xz
+rm -rf grep*.tar.xz
 
-# 
-tar -xf *.tar.xz && cd */
-./configure
+# Gzip
+tar -xf gzip*.tar.xz && cd gzip*/
+./configure --prefix=/usr --host=$LFS_TGT
 make -j$(nproc) && make DESTDIR=$LFS install
 cd $LFS/sources
-rm -rf *.tar.xz
+rm -rf gzip*.tar.xz
 
 # 
 tar -xf *.tar.xz && cd */
