@@ -11,6 +11,7 @@ trap 'echo "An error occurred. Exiting..."; exit 1;' ERR
 
 #Variables
 LFS=/mnt/lfs
+LFS_TGT=$(uname -m)-lfs-linux-gnu
 LC_ALL=C 
 PATH=/usr/bin:/bin
 
