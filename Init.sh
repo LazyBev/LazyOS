@@ -241,7 +241,7 @@ esac
 mkdir -pv $LFS/tools
 
 groupadd lfs
-useradd -s /bin/bash -g lfs -m -k /dev/null lfs
+useradd -s /bin/bash -g lfs -m -s /bin/bash -k /dev/null lfs
 usermod -aG root lfs
 passwd lfs
 
