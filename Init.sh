@@ -1,9 +1,16 @@
 #!/bin/bash
+
+set -eau
 # A script to list version numbers of critical development tools
 
 # If you have tools installed in other directories, adjust PATH here AND
 # in ~lfs/.bashrc (section 4.4) as well.
 
+# Error handling
+trap 'echo "An error occurred. Exiting..."; exit 1;' ERR
+
+#Variables
+LFS=/mnt/lfs
 LC_ALL=C 
 PATH=/usr/bin:/bin
 
@@ -121,34 +128,40 @@ read -p "Enter the size for the boot partition (e.g., +512M): " boot_size
 read -p "Enter the size for the swap partition (e.g., +4G): " swap_size
 read -p "Enter the size for the root partition (e.g., +30G): " root_size
 
-(
+# Partition the disk
+{
 echo o # Create a new empty GPT partition table
 echo n # New partition for boot
 echo p # Primary
 echo 1 # Partition number
 echo   # First sector (Accept default: will start at the beginning of the disk)
 echo +"$boot_size" # Size of the boot partition
-echo n # New partition for swap
+echo t # Set the type for this partition
+echo 1 # Type for EFI System (EFI boot partition)
+echo n # New partition for root
 echo p # Primary
 echo 2 # Partition number
 echo   # First sector (Accept default)
-echo +"$swap_size" # Size of the swap partition
-echo n # New partition for root
+echo +"$swap_size" # Size of the root partition
+echo t # Set the type for this partition
+echo 2 # Select the swap partition
+echo 19 # Type for Linux swap
+echo n # New partition for swap or additional partitions if required
 echo p # Primary
 echo 3 # Partition number
 echo   # First sector (Accept default)
 echo +"$root_size" # Size of the root partition
+echo t # Set the type for this partition
+echo 3 # Select the root partition
+echo 20 # Type for Linux filesystem
 echo w # Write the partition table
-) | fdisk "$disk"
+} | fdisk "$disk"
 
 mkfs.vfat -F 32 "$disk$disk_prefix"1 || { echo "Failed to format boot partition" && exit 1; }
 mkfs -v -t ext4 "$disk$disk_prefix"3 || { echo "Failed to format root partition" && exit 1; }
 mkswap "$disk$disk_prefix"2 || { echo "Failed to format swap partition" && exit 1; }
 
 echo "Partitioning complete!"
-
-export LFS=/mnt/lfs
-echo "export LFS=/mnt/lfs" > $HOME/.bashrc
 
 if [[ "$LFS" == "/mnt/lfs" ]]; then
     echo "Variable LFS is setup"
