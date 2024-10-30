@@ -34,7 +34,7 @@ mkdir -v build && cd build
 make -j$(nproc) && make install
 rm -rf $LFS/sources/binutils*.tar.xz
 
-# Gcc
+# Gcc && Libstdc++
 cd $LFS/sources && tar -xf gcc*.tar.xz && cd gcc*/
 tar -xf ../mpfr-4.2.1.tar.xz && mv -v mpfr-4.2.1 mpfr
 tar -xf ../gmp-6.3.0.tar.xz && mv -v gmp-6.3.0 gmp
@@ -71,7 +71,17 @@ mkdir -v build && cd build
 make -j$(nproc) && make install
 cd .. && cat gcc/limitx.h gcc/glimits.h gcc/limity.h > \
   `dirname $($LFS_TGT-gcc -print-libgcc-file-name)`/include/limits.h
-rm -rf $LFS/sources/gcc*.tar.xz
+rm -rf build && mkdir -v build && cd build
+../libstdc++-v3/configure           \
+    --host=$LFS_TGT                 \
+    --build=$(../config.guess)      \
+    --prefix=/usr                   \
+    --disable-multilib              \
+    --disable-nls                   \
+    --disable-libstdcxx-pch         \
+    --with-gxx-include-dir=/tools/$LFS_TGT/include/c++/14.2.0
+make -j$(nproc) && make DESTDIR=$LFS install
+rm -v $LFS/usr/lib/lib{stdc++{,exp,fs},supc++}.la
 
 # Linux kernel
 cd $LFS/sources && tar -xf linux*.tar.xz && cd linux*/
@@ -106,6 +116,3 @@ echo 'int main(){}' | $LFS_TGT-gcc -xc -
 readelf -l a.out | grep ld-linux
 rm -v a.out
 rm -rf $LFS/sources/glibc*.tar.xz
-
-# Libstdc++
-cd $LFS/sources && tar -xf lib*.tar.xz && cd linux*/
