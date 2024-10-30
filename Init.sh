@@ -197,6 +197,7 @@ sleep 2
 
 mkdir -pv "$LFS"
 mkdir -v $LFS/home
+ls $LFS
 mount -v -t ext4 "/dev/${disk}${disk_prefix}3" "$LFS"
 mount --mkdir "/dev/${disk}${disk_prefix}1" /mnt/boot
 swapon -v "/dev/${disk}${disk_prefix}2" || { echo "Failed to enable swap partition" && exit 1; }
@@ -220,9 +221,10 @@ echo -e "Setting up base system..."
 sleep 2
 
 mkdir -v $LFS/sources
+ls $LFS
 chmod -v a+wt $LFS/sources
 
-wget --input-file=wget-list-sysv --continue --directory-prefix=$LFS/sources
+wget --input-file=$HOME/LazyOS/wget-list-sysv --continue --directory-prefix=$LFS/sources
 chown root:root $LFS/sources/*
 
 wget https://www.linuxfromscratch.org/lfs/view/stable/md5sums
@@ -243,6 +245,7 @@ case $(uname -m) in
 esac
 
 mkdir -pv $LFS/tools
+ls $LFS
 
 groupadd lfs
 useradd -s /bin/bash -g lfs -m -s /bin/bash -k /dev/null lfs
