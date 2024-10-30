@@ -23,34 +23,40 @@ else
 fi
 
 bail() { echo "FATAL: $1"; exit 1; }
-grep --version > /dev/null 2> /dev/null || bail "grep does not work"
-sed '' /dev/null || bail "sed does not work"
-sort   /dev/null || bail "sort does not work"
 
-ver_check()
-{
-   if ! type -p $2 &>/dev/null
-   then 
-     echo "ERROR: Cannot find $2 ($1)"; return 1; 
+# Variable to track errors
+errors_occurred=0
+
+# Host OS requirement check
+grep --version > /dev/null 2> /dev/null || { bail "grep does not work"; errors_occurred=1; }
+sed '' /dev/null || { bail "sed does not work"; errors_occurred=1; }
+sort /dev/null || { bail "sort does not work"; errors_occurred=1; }
+
+ver_check() {
+   if ! type -p "$2" &>/dev/null; then 
+     echo "ERROR: Cannot find $2 ($1)"; 
+     errors_occurred=1
+     return 1; 
    fi
-   v=$($2 --version 2>&1 | grep -E -o '[0-9]+\.[0-9\.]+[a-z]*' | head -n1)
-   if printf '%s\n' $3 $v | sort --version-sort --check &>/dev/null
-   then 
-     printf "OK:    %-9s %-6s >= $3\n" "$1" "$v"; return 0;
+   v=$("$2" --version 2>&1 | grep -E -o '[0-9]+\.[0-9\.]+[a-z]*' | head -n1)
+   if printf '%s\n' "$3" "$v" | sort --version-sort --check &>/dev/null; then 
+     printf "OK:    %-9s %-6s >= $3\n" "$1" "$v"; 
+     return 0;
    else 
      printf "ERROR: %-9s is TOO OLD ($3 or later required)\n" "$1"; 
+     errors_occurred=1
      return 1; 
    fi
 }
 
-ver_kernel()
-{
+ver_kernel() {
    kver=$(uname -r | grep -E -o '^[0-9\.]+')
-   if printf '%s\n' $1 $kver | sort --version-sort --check &>/dev/null
-   then 
-     printf "OK:    Linux Kernel $kver >= $1\n"; return 0;
+   if printf '%s\n' "$1" "$kver" | sort --version-sort --check &>/dev/null; then 
+     printf "OK:    Linux Kernel $kver >= $1\n"; 
+     return 0;
    else 
-     printf "ERROR: Linux Kernel ($kver) is TOO OLD ($1 or later required)\n" "$kver"; 
+     printf "ERROR: Linux Kernel ($kver) is TOO OLD ($1 or later required)\n"; 
+     errors_occurred=1
      return 1; 
    fi
 }
@@ -78,41 +84,53 @@ ver_check Texinfo        texi2any 5.0
 ver_check Xz             xz       5.0.0
 ver_kernel 4.19
 
-if mount | grep -q 'devpts on /dev/pts' && [ -e /dev/ptmx ]
-then echo "OK:    Linux Kernel supports UNIX 98 PTY";
-else echo "ERROR: Linux Kernel does NOT support UNIX 98 PTY"; fi
+if mount | grep -q 'devpts on /dev/pts' && [ -e /dev/ptmx ]; then 
+  echo "OK:    Linux Kernel supports UNIX 98 PTY";
+else 
+  echo "ERROR: Linux Kernel does NOT support UNIX 98 PTY"; 
+  errors_occurred=1
+fi
 
 alias_check() {
-   if $1 --version 2>&1 | grep -qi $2
-   then printf "OK:    %-4s is $2\n" "$1";
-   else printf "ERROR: %-4s is NOT $2\n" "$1"; fi
+   if "$1" --version 2>&1 | grep -qi "$2"; then 
+     printf "OK:    %-4s is $2\n" "$1";
+   else 
+     printf "ERROR: %-4s is NOT $2\n" "$1"; 
+     errors_occurred=1
+   fi
 }
+
 echo "Aliases:"
 alias_check awk GNU
 alias_check yacc Bison
 alias_check sh Bash
 
 echo "Compiler check:"
-if printf "int main(){}" | g++ -x c++ -
-then echo "OK:    g++ works";
-else echo "ERROR: g++ does NOT work"; fi
+if printf "int main(){}" | g++ -x c++ -; then 
+  echo "OK:    g++ works";
+else 
+  echo "ERROR: g++ does NOT work"; 
+  errors_occurred=1
+fi
 rm -f a.out
 
 if [ "$(nproc)" = "" ]; then
-   echo "ERROR: nproc is not available or it produces empty output"
+   echo "ERROR: nproc is not available or it produces empty output"; 
+   errors_occurred=1
 else
    echo "OK: nproc reports $(nproc) logical cores are available"
 fi
 
-echo -e "\nCheck that your host OS has the correct packages needed."
-read -p "Are you sure you wanna continue? (y/n)? " yn
+echo -e "Checking if requirements meet on your host OS..."
+sleep 2
 
-if [[ "$yn" != "y" ]]; then
-    exit 1
-else
-    echo -e "Continuing..."
-    sudo pacman -S arch-install-scripts
+# Exit with status based on errors encountered
+if [ $errors_occurred -ne 0 ]; then
+  echo "Host OS does nto meet requirements to start installation"
+  exit 1
 fi
+
+sudo pacman -S arch-install-scripts
 
 lsblk
 read -p "Enter the disk to install on (e.g., /dev/sda): " disk
@@ -128,6 +146,9 @@ fi
 read -p "Enter the size for the boot partition (e.g., +512M): " boot_size
 read -p "Enter the size for the swap partition (e.g., +4G): " swap_size
 read -p "Enter the size for the root partition (e.g., +30G): " root_size
+
+echo -e "Partitioning disk..."
+sleep 2
 
 # Partition the disk
 {
@@ -158,11 +179,11 @@ echo 20 # Type for Linux filesystem
 echo w # Write the partition table
 } | fdisk "$disk"
 
-mkfs.vfat -F 32 /dev/"$disk$disk_prefix"1 || { echo "Failed to format boot partition" && exit 1; }
-mkfs -v -t ext4 /dev/"$disk$disk_prefix"3 || { echo "Failed to format root partition" && exit 1; }
-mkswap /dev/"$disk$disk_prefix"2 || { echo "Failed to format swap partition" && exit 1; }
+read -p "Enter the file system type for the root partition (e.g., ext4): " fstype
 
-echo "Partitioning complete!"
+mkfs.vfat -F 32 "/dev/${disk}${disk_prefix}1" || { echo "Failed to format boot partition" && exit 1; }
+mkfs -v -t "$fstype" "/dev/${disk}${disk_prefix}3" || { echo "Failed to format root partition" && exit 1; }
+mkswap "/dev/${disk}${disk_prefix}2" || { echo "Failed to format swap partition" && exit 1; }
 
 if [[ "$LFS" == "/mnt/lfs" ]]; then
     echo "Variable LFS is setup"
@@ -171,13 +192,32 @@ else
     exit 1
 fi
 
+echo -e "Mounting disk..."
+sleep 2
+
 mkdir -pv "$LFS"
 mkdir -v $LFS/home
-mount -v -t ext4 /dev/"$disk$disk_prefix"3 "$LFS"
-mount --mkdir /dev/"$disk$disk_prefix"1 /mnt/boot
-swapon -v /dev/"$disk$disk_prefix"2 || { echo "Failed to enable swap partition" && exit 1; }
+mount -v -t ext4 "/dev/${disk}${disk_prefix}3" "$LFS"
+mount --mkdir "/dev/${disk}${disk_prefix}1" /mnt/boot
+swapon -v "/dev/${disk}${disk_prefix}2" || { echo "Failed to enable swap partition" && exit 1; }
 
-echo "Mounting complete!"
+echo -e "Adding entry to /etc/fstab"
+sleep 2
+
+# Get the UUID of the partition
+UUID=$(sudo blkid "/dev/${disk}${disk_prefix}3" | awk -F' ' '/UUID=/{for(i=1;i<=NF;i++) if($i ~ /^UUID=/) print substr($i, 7, length($i)-7)}')
+
+# Check if UUID was found
+if [ -z "$UUID" ]; then
+  echo "Error: UUID not found for /dev/${disk}${disk_prefix}3"
+  exit 1
+fi
+
+# Add entry to /etc/fstab
+echo -e "\n# /dev/${disk}${disk_prefix}3\nUUID=$UUID /mnt/lfs  $fstype  defaults  1  1" | sudo tee -a /etc/fstab
+
+echo -e "Setting up base system..."
+sleep 2
 
 mkdir -v $LFS/sources
 chmod -v a+wt $LFS/sources
@@ -186,7 +226,7 @@ wget --input-file=wget-list-sysv --continue --directory-prefix=$LFS/sources
 chown root:root $LFS/sources/*
 
 wget https://www.linuxfromscratch.org/lfs/view/stable/md5sums
-mv md5sums $LFS/sources/md5sums
+mv md5sums $LFS/sources/
 
 mkdir -pv $LFS/{etc,var} $LFS/usr/{bin,lib,sbin}
 
