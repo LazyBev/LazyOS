@@ -33,32 +33,32 @@ sed '' /dev/null || { bail "sed does not work"; errors_occurred=1; }
 sort /dev/null || { bail "sort does not work"; errors_occurred=1; }
 
 ver_check() {
-   if ! type -p "$2" &>/dev/null; then 
-     echo "ERROR: Cannot find $2 ($1)"; 
-     errors_occurred=1
+	if ! type -p "$2" &>/dev/null; then 
+    	echo "ERROR: Cannot find $2 ($1)"; 
+    	errors_occurred=1
      return 1; 
-   fi
-   v=$("$2" --version 2>&1 | grep -E -o '[0-9]+\.[0-9\.]+[a-z]*' | head -n1)
-   if printf '%s\n' "$3" "$v" | sort --version-sort --check &>/dev/null; then 
-     printf "OK:    %-9s %-6s >= $3\n" "$1" "$v"; 
-     return 0;
-   else 
-     printf "ERROR: %-9s is TOO OLD ($3 or later required)\n" "$1"; 
-     errors_occurred=1
-     return 1; 
-   fi
+	fi
+	v=$("$2" --version 2>&1 | grep -E -o '[0-9]+\.[0-9\.]+[a-z]*' | head -n1)
+	if printf '%s\n' "$3" "$v" | sort --version-sort --check &>/dev/null; then 
+    	printf "OK:    %-9s %-6s >= $3\n" "$1" "$v"; 
+    	return 0;
+	else 
+    	printf "ERROR: %-9s is TOO OLD ($3 or later required)\n" "$1"; 
+     	errors_occurred=1
+     	return 1; 
+   	fi
 }
 
 ver_kernel() {
-   kver=$(uname -r | grep -E -o '^[0-9\.]+')
-   if printf '%s\n' "$1" "$kver" | sort --version-sort --check &>/dev/null; then 
-     printf "OK:    Linux Kernel $kver >= $1\n"; 
-     return 0;
-   else 
-     printf "ERROR: Linux Kernel ($kver) is TOO OLD ($1 or later required)\n"; 
-     errors_occurred=1
-     return 1; 
-   fi
+   	kver=$(uname -r | grep -E -o '^[0-9\.]+')
+   	if printf '%s\n' "$1" "$kver" | sort --version-sort --check &>/dev/null; then 
+     	printf "OK:    Linux Kernel $kver >= $1\n"; 
+     	return 0;
+   	else 
+     	printf "ERROR: Linux Kernel ($kver) is TOO OLD ($1 or later required)\n"; 
+     	errors_occurred=1
+     	return 1; 
+   	fi
 }
 
 # Coreutils first because --version-sort needs Coreutils >= 7.0
@@ -85,19 +85,19 @@ ver_check Xz             xz       5.0.0
 ver_kernel 4.19
 
 if mount | grep -q 'devpts on /dev/pts' && [ -e /dev/ptmx ]; then 
-  echo "OK:    Linux Kernel supports UNIX 98 PTY";
+	echo "OK:    Linux Kernel supports UNIX 98 PTY";
 else 
-  echo "ERROR: Linux Kernel does NOT support UNIX 98 PTY"; 
-  errors_occurred=1
+	echo "ERROR: Linux Kernel does NOT support UNIX 98 PTY"; 
+	errors_occurred=1
 fi
 
 alias_check() {
-   if "$1" --version 2>&1 | grep -qi "$2"; then 
-     printf "OK:    %-4s is $2\n" "$1";
-   else 
-     printf "ERROR: %-4s is NOT $2\n" "$1"; 
-     errors_occurred=1
-   fi
+	if "$1" --version 2>&1 | grep -qi "$2"; then 
+    	printf "OK:    %-4s is $2\n" "$1";
+	else 
+    	printf "ERROR: %-4s is NOT $2\n" "$1"; 
+    	errors_occurred=1
+	fi
 }
 
 echo "Aliases:"
@@ -107,18 +107,18 @@ alias_check sh Bash
 
 echo "Compiler check:"
 if printf "int main(){}" | g++ -x c++ -; then 
-  echo "OK:    g++ works";
+	echo "OK:    g++ works";
 else 
-  echo "ERROR: g++ does NOT work"; 
-  errors_occurred=1
+	echo "ERROR: g++ does NOT work"; 
+	errors_occurred=1
 fi
 rm -f a.out
 
 if [ "$(nproc)" = "" ]; then
-   echo "ERROR: nproc is not available or it produces empty output"; 
-   errors_occurred=1
+	echo "ERROR: nproc is not available or it produces empty output"; 
+	errors_occurred=1
 else
-   echo "OK: nproc reports $(nproc) logical cores are available"
+	echo "OK: nproc reports $(nproc) logical cores are available"
 fi
 
 echo -e "Checking if requirements meet on your host OS..."
@@ -126,8 +126,8 @@ sleep 2
 
 # Exit with status based on errors encountered
 if [ $errors_occurred -ne 0 ]; then
-  echo "Host OS does nto meet requirements to start installation"
-  exit 1
+	echo "Host OS does nto meet requirements to start installation"
+	exit 1
 fi
 
 sudo pacman -S arch-install-scripts
@@ -186,7 +186,7 @@ mkfs -v -t "$fstype" "/dev/${disk}${disk_prefix}3" || { echo "Failed to format r
 mkswap "/dev/${disk}${disk_prefix}2" || { echo "Failed to format swap partition" && exit 1; }
 
 if [[ "$LFS" == "/mnt/lfs" ]]; then
-    echo "Variable LFS is setup"
+	echo "Variable LFS is setup"
 else
     echo "Error: LFS is not set to /mnt/lfs, it is set to $LFS"
     exit 1
@@ -209,8 +209,8 @@ UUID=$(sudo blkid "/dev/${disk}${disk_prefix}3" | awk -F' ' '/UUID=/{for(i=1;i<=
 
 # Check if UUID was found
 if [ -z "$UUID" ]; then
-  echo "Error: UUID not found for /dev/${disk}${disk_prefix}3"
-  exit 1
+	echo "Error: UUID not found for /dev/${disk}${disk_prefix}3"
+	exit 1
 fi
 
 # Add entry to /etc/fstab
@@ -228,14 +228,18 @@ chown root:root $LFS/sources/*
 wget https://www.linuxfromscratch.org/lfs/view/stable/md5sums
 mv md5sums $LFS/sources/
 
+pushd $LFS/sources
+    md5sum -c md5sums
+popd
+
 mkdir -pv $LFS/{etc,var} $LFS/usr/{bin,lib,sbin}
 
 for i in bin lib sbin; do
-  ln -sv usr/$i $LFS/$i
+	ln -sv usr/$i $LFS/$i
 done
 
 case $(uname -m) in
-  x86_64) mkdir -pv $LFS/lib64 ;;
+	x86_64) mkdir -pv $LFS/lib64 ;;
 esac
 
 mkdir -pv $LFS/tools
@@ -247,7 +251,7 @@ passwd lfs
 
 chown -v lfs $LFS/{usr{,/*},lib,var,etc,bin,sbin,tools}
 case $(uname -m) in
-  x86_64) chown -v lfs $LFS/lib64 ;;
+	x86_64) chown -v lfs $LFS/lib64 ;;
 esac
 
 su - lfs -c "cd /home/lazybev/LazyOS && chmod +x ./Setup.sh && ./Setup.sh"
