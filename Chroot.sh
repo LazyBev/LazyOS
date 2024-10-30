@@ -15,6 +15,7 @@ case $(uname -m) in
 esac
 
 mkdir -pv $LFS/{dev,proc,sys,run}
+ls $LFS
 mount -v --bind /dev $LFS/dev
 mount -vt devpts devpts -o gid=5,mode=0620 $LFS/dev/pts
 mount -vt proc proc $LFS/proc
@@ -34,6 +35,7 @@ chroot "$LFS" /usr/bin/env -i HOME=/root TERM="$TERM" PS1='(lfs chroot) \u:\w\$ 
 set -e
 
 mkdir -pv /{boot,home,mnt,opt,srv}
+ls /
 mkdir -pv /etc/{opt,sysconfig}
 mkdir -pv /lib/firmware
 mkdir -pv /media/{floppy,cdrom}
