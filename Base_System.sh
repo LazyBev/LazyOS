@@ -1021,6 +1021,218 @@ tar -xvzf libpipeline*.tar.gz && cd libpipeline*/
 ./configure --prefix=/usr
 make -j$(nproc) && make check
 make install
+cd /sources
+
+# Make
+tar -xvzf make*.tar.gz && cd make*/
+./configure --prefix=/usr
+make -j$(nproc)
+chown -R tester .
+su tester -c "PATH=$PATH make check"
+make install
+cd /sources
+
+# Patch
+tar -xvJf patch*.tar.xz && cd patch*/
+./configure --prefix=/usr
+make -j$(nproc) && make check
+make install
+cd /sources
+
+# Tar
+tar -xvJf tar*.tar.xz && cd tar*/
+FORCE_UNSAFE_CONFIGURE=1  \
+./configure --prefix=/usr
+make -j$(nproc) && make check
+make install && make -C doc install-html docdir=/usr/share/doc/tar-1.35
+cd /sources
+
+# Texinfo
+tar -xvJf texinfo*.tar.xz && cd texinfo*/
+./configure --prefix=/usr
+make -j$(nproc) && make check
+make install && make TEXMF=/usr/share/texmf install-tex
+cd /sources
+
+# Vim
+tar -xvzf vim*.tar.gz && cd vim*/
+echo '#define SYS_VIMRC_FILE "/etc/vimrc"' >> src/feature.h
+./configure --prefix=/usr
+make -j$(nproc)
+chown -R tester .
+su tester -c "TERM=xterm-256color LANG=en_US.UTF-8 make -j1 test" \
+   &> vim-test.log
+ln -sv vim /usr/bin/vi
+for L in  /usr/share/man/{,*/}man1/vim.1; do
+    ln -sv vim.1 $(dirname $L)/vi.1
+done
+ln -sv ../vim/vim91/doc /usr/share/doc/vim-9.1.0660
+
+cat > /etc/vimrc << "RC"
+source $VIMRUNTIME/defaults.vim
+let skip_defaults_vim=1
+
+set nocompatible
+set backspace=2
+set mouse=
+syntax on
+if (&term == "xterm") || (&term == "putty")
+  set background=dark
+endif
+RC
+cd /sources
+
+# Markupsafe
+tar -xvzf MarkupSafe*.tar.gz && cd Markupsafe*/
+pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+pip3 install --no-index --no-user --find-links dist Markupsafe
+cd /sources
+
+# Jinja
+tar -xvzf jinja2*.tar.gz && cd jinja2*/
+pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+pip3 install --no-index --no-user --find-links dist Jinja2
+cd /sources
+
+# Udev
+tar -xvzf systemd*.tar.gz && cd systemd*/
+sed -i -e 's/GROUP="render"/GROUP="video"/' \
+       -e 's/GROUP="sgx", //' rules.d/50-udev-default.rules.in
+sed '/systemd-sysctl/s/^/#/' -i rules.d/99-systemd.rules.in
+sed '/NETWORK_DIRS/s/systemd/udev/' -i src/basic/path-lookup.h
+mkdir -p build && cd build
+meson setup ..                  \
+      --prefix=/usr             \
+      --buildtype=release       \
+      -D mode=release           \
+      -D dev-kvm-mode=0660      \
+      -D link-udev-shared=false \
+      -D logind=false           \
+      -D vconsole=false
+export udev_helpers=$(grep "'name' :" ../src/udev/meson.build | \
+                      awk '{print $3}' | tr -d ",'" | grep -v 'udevadm')
+ninja udevadm systemd-hwdb                                           \
+      $(ninja -n | grep -Eo '(src/(lib)?udev|rules.d|hwdb.d)/[^ ]*') \
+      $(realpath libudev.so --relative-to .)                         \
+      $udev_helpers
+install -vm755 -d {/usr/lib,/etc}/udev/{hwdb.d,rules.d,network}
+install -vm755 -d /usr/{lib,share}/pkgconfig
+install -vm755 udevadm                             /usr/bin/
+install -vm755 systemd-hwdb                        /usr/bin/udev-hwdb
+ln      -svfn  ../bin/udevadm                      /usr/sbin/udevd
+cp      -av    libudev.so{,*[0-9]}                 /usr/lib/
+install -vm644 ../src/libudev/libudev.h            /usr/include/
+install -vm644 src/libudev/*.pc                    /usr/lib/pkgconfig/
+install -vm644 src/udev/*.pc                       /usr/share/pkgconfig/
+install -vm644 ../src/udev/udev.conf               /etc/udev/
+install -vm644 rules.d/* ../rules.d/README         /usr/lib/udev/rules.d/
+install -vm644 $(find ../rules.d/*.rules \
+                      -not -name '*power-switch*') /usr/lib/udev/rules.d/
+install -vm644 hwdb.d/*  ../hwdb.d/{*.hwdb,README} /usr/lib/udev/hwdb.d/
+install -vm755 $udev_helpers                       /usr/lib/udev
+install -vm644 ../network/99-default.link          /usr/lib/udev/network
+tar -xvf ../../udev-lfs-20230818.tar.xz
+make -f udev-lfs-20230818/Makefile.lfs install
+tar -xf ../../systemd-man-pages-256.4.tar.xz                            \
+    --no-same-owner --strip-components=1                              \
+    -C /usr/share/man --wildcards '*/udev*' '*/libudev*'              \
+                                  '*/systemd.link.5'                  \
+                                  '*/systemd-'{hwdb,udevd.service}.8
+
+sed 's|systemd/network|udev/network|'                                 \
+    /usr/share/man/man5/systemd.link.5                                \
+  > /usr/share/man/man5/udev.link.5
+
+sed 's/systemd\(\\\?-\)/udev\1/' /usr/share/man/man8/systemd-hwdb.8   \
+                               > /usr/share/man/man8/udev-hwdb.8
+
+sed 's|lib.*udevd|sbin/udevd|'                                        \
+    /usr/share/man/man8/systemd-udevd.service.8                       \
+  > /usr/share/man/man8/udevd.8
+
+rm /usr/share/man/man*/systemd*
+unset udev_helpers
+udev-hwdb update
+cd /sources
+
+# Man-db
+tar -xvJf man-db*.tar.xz && cd man-db*/
+./configure --prefix=/usr                         \
+            --docdir=/usr/share/doc/man-db-2.12.1 \
+            --sysconfdir=/etc                     \
+            --disable-setuid                      \
+            --enable-cache-owner=bin              \
+            --with-browser=/usr/bin/lynx          \
+            --with-vgrind=/usr/bin/vgrind         \
+            --with-grap=/usr/bin/grap             \
+            --with-systemdtmpfilesdir=            \
+            --with-systemdsystemunitdir=
+make -j$(nproc) && make check
+make install
+cd /sources
+
+# Procps
+tar -xvJf procps*.tar.xz && cd procps*/
+./configure --prefix=/usr                           \
+            --docdir=/usr/share/doc/procps-ng-4.0.4 \
+            --disable-static                        \
+            --disable-kill
+make -$(nprocs) 
+chown -R tester .
+su tester -c "PATH=$PATH make check"
+make install
+cd /sources
+
+# Util-linux
+tar -xvJf util-linux*.tar.xz && cd util-linux*/
+./configure --bindir=/usr/bin     \
+            --libdir=/usr/lib     \
+            --runstatedir=/run    \
+            --sbindir=/usr/sbin   \
+            --disable-chfn-chsh   \
+            --disable-login       \
+            --disable-nologin     \
+            --disable-su          \
+            --disable-setpriv     \
+            --disable-runuser     \
+            --disable-pylibmount  \
+            --disable-liblastlog2 \
+            --disable-static      \
+            --without-python      \
+            --without-systemd     \
+            --without-systemdsystemunitdir        \
+            ADJTIME_PATH=/var/lib/hwclock/adjtime \
+            --docdir=/usr/share/doc/util-linux-2.40.2
+make -j$(nproc)
+touch /etc/fstab
+chown -R tester .
+su tester -c "make -k check"
+make install
+cd /sources
+
+# E2fsprogs
+tar -xvzf e2fsprogs*.tar.gz && cd e2fsprogs*/
+mkdir -v build && cd build
+../configure --prefix=/usr           \
+             --sysconfdir=/etc       \
+             --enable-elf-shlibs     \
+             --disable-libblkid      \
+             --disable-libuuid       \
+             --disable-uuidd         \
+             --disable-fsck
+make -j$(nproc) && make check
+make install
+rm -fv /usr/lib/{libcom_err,libe2p,libext2fs,libss}.a
+gunzip -v /usr/share/info/libext2fs.info.gz
+install-info --dir-file=/usr/share/info/dir /usr/share/info/libext2fs.info
+makeinfo -o      doc/com_err.info ../lib/et/com_err.texinfo
+install -v -m644 doc/com_err.info /usr/share/info
+install-info --dir-file=/usr/share/info/dir /usr/share/info/com_err.info
+sed 's/metadata_csum_seed,//' -i /etc/mke2fs.conf
+cd /sources
+
+
+
 
 
 
