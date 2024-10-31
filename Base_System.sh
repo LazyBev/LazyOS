@@ -1663,6 +1663,7 @@ tar -xvzf wget*.tar.gz && cd wget*/
 make && make install
 cd /sources
 
+# I CANT FINISH THIS RAHHH
 if [[ head -n7 /proc/cpuinfo | grep -i 'AMD' ]]; then
 
 else
