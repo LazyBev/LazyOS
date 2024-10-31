@@ -721,10 +721,71 @@ make -j$(nproc) && make -k check
 make install
 cd /sources
 
+# Gperf
+tar -xvzf gperf*.tar.gz && cd tar -xvzf gdbm*.tar.gz && cd gdbm*/*/
+./configure --prefix=/usr --docdir=/usr/share/doc/gperf-3.1
+make -j$(nproc) && make -j1 check
+make install
+cd /sources
 
+# Expat
+tar -xvJf expat*.tar.xz && cd expat*/
+./configure --prefix=/usr    \
+            --disable-static \
+            --docdir=/usr/share/doc/expat-2.6.2
+make -j$(nproc) && make check
+make install
+install -v -m644 doc/*.{html,css} /usr/share/doc/expat-2.6.2
+cd /sources
 
+# Inetutils
+tar -xvJf inetutils*.tar.xz && cd inetutils*/
+sed -i 's/def HAVE_TERMCAP_TGETENT/ 1/' telnet/telnet.c
+./configure --prefix=/usr        \
+            --bindir=/usr/bin    \
+            --localstatedir=/var \
+            --disable-logger     \
+            --disable-whois      \
+            --disable-rcp        \
+            --disable-rexec      \
+            --disable-rlogin     \
+            --disable-rsh        \
+            --disable-servers
+make -j$(nproc) && make check
+make install
+mv -v /usr/{,s}bin/ifconfig
+cd /sources
 
+# Less
+tar -xvzf less*.tar.gz && cd less*/
+./configure --prefix=/usr --sysconfdir=/etc
+make -j$(nproc) && make check
+make install
+cd /sources
 
+# Perl
+tar -xvJf perl*.tar.gz && cd perl*/
+export BUILD_ZLIB=False
+export BUILD_BZIP2=0
+sh Configure -des                                          \
+             -D prefix=/usr                                \
+             -D vendorprefix=/usr                          \
+             -D privlib=/usr/lib/perl5/5.40/core_perl      \
+             -D archlib=/usr/lib/perl5/5.40/core_perl      \
+             -D sitelib=/usr/lib/perl5/5.40/site_perl      \
+             -D sitearch=/usr/lib/perl5/5.40/site_perl     \
+             -D vendorlib=/usr/lib/perl5/5.40/vendor_perl  \
+             -D vendorarch=/usr/lib/perl5/5.40/vendor_perl \
+             -D man1dir=/usr/share/man/man1                \
+             -D man3dir=/usr/share/man/man3                \
+             -D pager="/usr/bin/less -isR"                 \
+             -D useshrplib                                 \
+             -D usethreads
+make -j$(nproc) 
+TEST_JOBS=$(nproc) make test_harness
+make install
+unset BUILD_ZLIB BUILD_BZIP2
+cd /sources
 
 
 
