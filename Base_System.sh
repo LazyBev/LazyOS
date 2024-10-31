@@ -1246,14 +1246,73 @@ user.* -/var/log/user.log
 *.emerg *
 secure_mode 2
 SYSLOG
+cd /sources
 
 # Sysvinit
 tar -xvJf sysvinit*.tar.xz && cd sysvinit*/
 patch -Np1 -i ../sysvinit*.patch
 make -j$(nproc) && make install
+cd /sources
 
 rm -rf /tmp/{*,.*}
 find /usr/lib /usr/libexec -name \*.la -delete
 find /usr -depth -name $(uname -m)-lfs-linux-gnu\* | xargs rm -rf
 userdel -r tester
+
+# Lfs-bootscripts
+tar -xvJf lfs-bootscripts*.tar.xz && cd lfs-bootscripts*/
+make install
+cd /sources
+
+bash /usr/lib/udev/init-net-rules.sh
+cat /etc/udev/rules.d/70-persistent-net.rules
+
+echo -e "Setting up network configuration"
+
+export IFACE=$(grep -o 'NAME="[^"]*"' /etc/udev/rules.d/70-persistent-net.rules | awk -F'=' '{gsub(/"/, "", $2); print $2}')
+export ONBOOT=$(ip link show "$IFACE" | grep -q "state UP" && echo "yes" || echo "no")
+export SERVICE=$(ip link show "$IFACE" | grep -oP "(?<=link/)[^ ]+")
+export IP=$(ip -4 addr show "$IFACE" | grep -oP "(?<=inet\s)\d+(\.\d+){3}")
+export GATEWAY=$(ip route | grep -m1 default | awk '{print $3}')
+export PREFIX=$(ip -4 addr show "$IFACE" | grep -oP "(?<=inet\s)\d+(\.\d+){3}/\d+" | awk -F'/' '{print $2}')
+export BROADCAST=$(ip -4 addr show "$IFACE" | grep -oP "(?<=brd\s)\d+(\.\d+){3}")
+
+echo "ONBOOT=$ONBOOT"
+echo "IFACE=$INTFACE"
+echo "SERVICE=$SERVICE"
+echo "IP=$IP"
+echo "GATEWAY=$GATEWAY"
+echo "PREFIX=$PREFIX"
+echo "BROADCAST=$BROADCAST"
+
+sed -e '/^AlternativeNamesPolicy/s/=.*$/=/'  \
+       /usr/lib/udev/network/99-default.link \
+     > /etc/udev/network/99-default.link
+
+cd /etc/sysconfig/
+cat > ifconfig.eth0 << "IFCONF"
+ONBOOT=yes
+IFACE=$IFACE
+SERVICE=$SERVICE
+IP=$IP
+GATEWAY=$GATEWAY
+PREFIX=$PREFIX
+BROADCAST=$BROADCAST
+IFCONF
+
+cat > /etc/resolv.conf << "RESLOV"
+domain cloudflare IPv4
+nameserver 1.1.1.1
+nameserver 1.0.0.1
+RESOLV
+
+read -p "Type in a hostname for your system: " hsnm
+
+echo "$hsnm" > /etc/hostname
+
+
+
+
+
+
 EOF
