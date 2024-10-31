@@ -831,6 +831,64 @@ mv -v /usr/share/doc/openssl /usr/share/doc/openssl-3.3.1
 cp -vfr doc/* /usr/share/doc/openssl-3.3.1
 cd /sources
 
+# Kmod
+tar -xvJf kmod*.tar.xz && cd kmod*/
+./configure --prefix=/usr     \
+            --sysconfdir=/etc \
+            --with-openssl    \
+            --with-xz         \
+            --with-zstd       \
+            --with-zlib       \
+            --disable-manpages
+make -j$(nproc) && make install
+
+for target in depmod insmod modinfo modprobe rmmod; do
+  	ln -sfv ../bin/kmod /usr/sbin/$target
+  	rm -fv /usr/bin/$target
+done
+cd /sources
+
+# Elfutils
+tar -xvjf elfutils*.tar.bz2 && cd elfutils*/
+./configure --prefix=/usr                \
+            --disable-debuginfod         \
+            --enable-libdebuginfod=dummy
+make -j$(nproc) && make check
+make -C libelf install
+install -vm644 config/libelf.pc /usr/lib/pkgconfig
+rm /usr/lib/libelf.a
+cd /sources
+
+# Libffi
+tar -xvzf libffi*.tar.gz && cd libffi*/
+/configure --prefix=/usr          \
+            --disable-static       \
+            --with-gcc-arch=native
+make -j$(nproc) && make check
+make install
+cd /sources
+
+# Python
+tar -xvJf Python*.tar.xz && cd Python*/
+./configure --prefix=/usr        \
+            --enable-shared      \
+            --with-system-expat  \
+            --enable-optimizations
+make -j$(nproc) && make test TESTOPTS="--timeout 120"
+make install
+cat > /etc/pip.conf << "PIP"
+[global]
+root-user-action = ignore
+disable-pip-version-check = true
+PIP
+install -v -dm755 /usr/share/doc/python-3.12.5/html
+
+tar --no-same-owner \
+    -xvf ../python-3.12.5-docs-html.tar.bz2
+cp -R --no-preserve=mode python-3.12.5-docs-html/* \
+    /usr/share/doc/python-3.12.5/html
+cd /sources
+
 
 
 
