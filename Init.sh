@@ -201,7 +201,7 @@ sleep 2
 
 mkdir -pv "$LFS"
 mount -v -t ext4 "$rootp" "$LFS"
-mount --mkdir -v -t vfat "$bootP" -o codepage=437,iocharset=iso8859-1 \/boot/efi
+mount --mkdir -v -t vfat "$bootP" /boot/efi
 swapon -v "$swapP" || { echo "Failed to enable swap partition" && exit 1; }
 
 echo -e "Adding entry to /etc/fstab"
