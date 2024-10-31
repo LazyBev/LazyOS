@@ -1415,12 +1415,30 @@ cat > /etc/shells << "SHELL"
 /bin/bash
 SHELL
 
+
+lsblk
+read -p "Re-enter the disk you are installing on (e.g., /dev/sda): " disk
+
+# Determine disk prefix
+if [[ "$disk" == /dev/nvme* ]]; then
+    disk_prefix="p"
+else
+    disk_prefix=""
+fi
+
+export bootP="/dev/${disk}${disk_prefix}1"
+export swapP="/dev/${disk}${disk_prefix}2"
+export rootP="/dev/${disk}${disk_prefix}3"
+
+read -p "Re-enter the file system type for the root partition (e.g., ext4): " fstype
+
 cat > /etc/fstab << "FSTAB"
 # file system  mount-point    type     options             dump  fsck
 #                                                                order
 
-/dev/<xxx>     /              <fff>    defaults            1     1
-/dev/<yyy>     swap           swap     pri=1               0     0
+$rootP         /              $fstype  defaults            1     1
+$booP          /boot          vfat     noauto              1     2
+$swapP         swap           swap     pri=1               0     0
 proc           /proc          proc     nosuid,noexec,nodev 0     0
 sysfs          /sys           sysfs    nosuid,noexec,nodev 0     0
 devpts         /dev/pts       devpts   gid=5,mode=620      0     0
@@ -1429,6 +1447,12 @@ devtmpfs       /dev           devtmpfs mode=0755,nosuid    0     0
 tmpfs          /dev/shm       tmpfs    nosuid,nodev        0     0
 cgroup2        /sys/fs/cgroup cgroup2  nosuid,noexec,nodev 0     0
 FSTAB
+
+# Linux kernel
+cd /sources
+tar -xvJf linux*.tar.xz && cd linux*/
+make mrproper
+make defconfig
 
 
 EOF
