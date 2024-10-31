@@ -176,16 +176,16 @@ find /usr/{lib,libexec} -name \*.la -delete
 rm -rf /tools
 
 # Man pages
-cd $LFS_SRC
+cd /sources
 tar -xvJf man-pages*.tar.xz && cd man-pages*/
 rm -v man3/crypt*
 make prefix=/usr install
-cd $LFS_SRC
+cd /sources
 
 # Iana-etc
 tar -xvJf iana-etc*.tar.xz && cd iana-etc*/
 cp services protocols /etc
-cd $LFS_SRC
+cd /sources
 
 # Glibc
 tar -xvJf glibc*.tar.xz && cd glibc*/
@@ -296,7 +296,7 @@ tar -xvzf zlib*.tar.gz && cd zlib*/
 ./configure --prefix=/usr
 make -j$(nproc) && make check && make install
 rm -fv /usr/lib/libz.a
-cd $LFS_SRC
+cd /sources
 
 # Bzip
 tar -xvzf bzip2*.tar.gz && cd bzip2*/
@@ -311,7 +311,7 @@ for i in /usr/bin/{bzcat,bunzip2}; do
 	ln -sfv bzip2 $i
 done
 rm -fv /usr/lib/libbz2.a
-cd $LFS_SRC
+cd /sources
 
 # Xz
 tar -xvJf xz*.tar.xz && cd xz*/
@@ -319,24 +319,24 @@ tar -xvJf xz*.tar.xz && cd xz*/
             --disable-static \
             --docdir=/usr/share/doc/xz-5.6.2
 make -j$(nproc) && make check && make install
-cd $LFS_SRC
+cd /sources
 
 # Lz4
 tar -xvzf lz4*.tar.gz && cd lz4*/
 make -j$(nproc) BUILD_STATIC=no PREFIX=/usr && make -j1 check && make BUILD_STATIC=no PREFIX=/usr install
-cd $LFS_SRC
+cd /sources
 
 # Zstd
 tar -xvzf zstd*.tar.gz && cd zstd*/
 make -j$(nproc) prefix=/usr && make check && make prefix=/usr install
 rm -v /usr/lib/libzstd.a
-cd $LFS_SRC
+cd /sources
 
 # File
 tar -xvzf file*.tar.gz && cd file*/
 /configure --prefix=/usr
 make -j$(nproc) && make check && make install
-cd $LFS_SRC
+cd /sources
 
 # Readline
 tar -xvzf readline*.tar.gz && cd readline*/
@@ -349,19 +349,19 @@ sed -i 's/-Wl,-rpath,[^ ]*//' support/shobj-conf
             --docdir=/usr/share/doc/readline-8.2.13
 make -j$(nproc) SHLIB_LIBS="-lncursesw" && make SHLIB_LIBS="-lncursesw" install
 install -v -m644 doc/*.{ps,pdf,html,dvi} /usr/share/doc/readline-8.2.13
-cd $LFS_SRC
+cd /sources
 
 # M4
 tar -xvJf m4*.tar.xz && cd m4*/
 ./configure --prefix=/usr
 make -j$(nproc) && make check && make install
-cd $LFS_SRC
+cd /sources
 
 # Bc
 tar -xvJf bc*.tar.xz && cd bc*/
 CC=gcc ./configure --prefix=/usr -G -O3 -r
 make -j$(nproc) && make test && make install
-cd $LFS_SRC
+cd /sources
 
 # Flex
 tar -xvzf flex*.tar.gz && cd flex*/
@@ -371,7 +371,7 @@ tar -xvzf flex*.tar.gz && cd flex*/
 make -j$(nproc) && make check && make install
 ln -sv flex   /usr/bin/lex
 ln -sv flex.1 /usr/share/man/man1/lex.1
-cd $LFS_SRC
+cd /sources
 
 # Tcl
 tar -xvzf tcl*src.tar.gz && cd tcl*/
@@ -407,7 +407,7 @@ cd ..
 tar -xf ../tcl8.6.14-html.tar.gz --strip-components=1
 mkdir -v -p /usr/share/doc/tcl-8.6.14
 cp -v -r  ./html/* /usr/share/doc/tcl-8.6.14
-cd $LFS_SRC
+cd /sources
 
 # Expect
 tar -xvzf expect*.tar.gz && cd expect*/
@@ -421,7 +421,7 @@ patch -Np1 -i ../expect-5.45.4-gcc14-1.patch
             --with-tclinclude=/usr/include
 make -j$(nproc) && make test && make install
 ln -svf expect5.45.4/libexpect5.45.4.so /usr/lib
-cd $LFS_SRC
+cd /sources
 
 # DejaGNU
 tar -xvzf dejagnu*.tar.gz && cd dejagnu*/
@@ -432,7 +432,8 @@ makeinfo --plaintext       -o doc/dejagnu.txt  ../doc/dejagnu.texi
 make check && make install
 install -v -dm755  /usr/share/doc/dejagnu-1.6.3
 install -v -m644   doc/dejagnu.{html,txt} /usr/share/doc/dejagnu-1.6.3
-cd $LFS_SRC
+rm -rf build
+cd /sources
 
 # Pkgconf
 tar -xvJf pkgconf*.tar.xz && cd pkgconf*/
@@ -442,7 +443,7 @@ tar -xvJf pkgconf*.tar.xz && cd pkgconf*/
 make -j$(nproc) && make install
 ln -sv pkgconf   /usr/bin/pkg-config
 ln -sv pkgconf.1 /usr/share/man/man1/pkg-config.1
-cd $LFS_SRC
+cd /sources
 
 # Binutils
 tar -xvJf binutils*.tar.xz && cd binutils*/
@@ -460,7 +461,8 @@ mkdir -v build && cd build
              --enable-default-hash-style=gnu
 make -j$(nproc) tooldir=/usr && make -k check && make tooldir=/usr install
 rm -fv /usr/lib/lib{bfd,ctf,ctf-nobfd,gprofng,opcodes,sframe}.a
-cd $LFS_SRC
+rm -rf build
+cd /sources
 
 # Gmp
 tar -xvJf gmp*.tar.xz && cd gmp*/
@@ -471,7 +473,7 @@ tar -xvJf gmp*.tar.xz && cd gmp*/
 make -j$(nproc) && make html
 make check 2>&1 | tee gmp-check-log
 make install && make install-html
-cd $LFS_SRC
+cd /sources
 
 # Mpfr
 tar -xvJf mpfr*.tar.xz && cd mpfr*/
@@ -482,7 +484,7 @@ tar -xvJf mpfr*.tar.xz && cd mpfr*/
 make && make html
 make check
 make install && make install-html
-cd $LFS_SRC
+cd /sources
 
 # Mpc
 tar -xvzf mpc*.tar.gz && cd mpc*/
@@ -492,7 +494,7 @@ tar -xvzf mpc*.tar.gz && cd mpc*/
 make && make html
 make check
 make install && make install-html
-cd $LFS_SRC
+cd /sources
 
 # Attr
 tar -xvzf attr*.tar.gz && cd attr*/
@@ -502,7 +504,7 @@ tar -xvzf attr*.tar.gz && cd attr*/
             --docdir=/usr/share/doc/attr-2.5.2
 make -j$(nproc) && make check
 make install
-cd $LFS_SRC
+cd /sources
 
 # Acl
 tar -xvzf acl*.tar.gz && cd acl*/
@@ -510,14 +512,32 @@ tar -xvzf acl*.tar.gz && cd acl*/
             --disable-static      \
             --docdir=/usr/share/doc/acl-2.3.2
 make -j$(nproc) && make install
-cd $LFS_SRC
+cd /sources
 
 # Libcap
 tar -xvJf libcap*.tar.xz && cd libcap*/
 sed -i '/install -m.*STA/d' libcap/Makefile
 make -j$(nproc) prefix=/usr lib=lib 
 make test && make prefix=/usr lib=lib install
-cd $LFS_SRC
+cd /sources
+
+# Libxcrypt
+tar -xvJf libxcrypt*.tar.xz && cd libxcrypt*/
+./configure --prefix=/usr                \
+            --enable-hashes=strong,glibc \
+            --enable-obsolete-api=no     \
+            --disable-static             \
+            --disable-failure-tokens
+make -j$(nproc) && make check
+make install && make distclean
+./configure --prefix=/usr                \
+            --enable-hashes=strong,glibc \
+            --enable-obsolete-api=glibc  \
+            --disable-static             \
+            --disable-failure-tokens
+make -j$(nproc)
+cp -av --remove-destination .libs/libcrypt.so.1* /usr/lib
+cd /sources
 
 
 
