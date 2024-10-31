@@ -882,12 +882,82 @@ root-user-action = ignore
 disable-pip-version-check = true
 PIP
 install -v -dm755 /usr/share/doc/python-3.12.5/html
-
 tar --no-same-owner \
     -xvf ../python-3.12.5-docs-html.tar.bz2
 cp -R --no-preserve=mode python-3.12.5-docs-html/* \
     /usr/share/doc/python-3.12.5/html
 cd /sources
+
+# Flit
+tar -xvzf flit*.tar.gz && cd flit*/
+pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+pip3 install --no-index --no-user --find-links dist flit_core
+cd /sources
+
+# Wheel
+tar -xvzf wheel*.tar.gz && cd wheel*/
+pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+pip3 install --no-index --find-links=dist wheel
+cd /sources
+
+# Setuptools
+tar -xvzf setuptools*.tar.gz && cd setuptools*/
+pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+pip3 install --no-index --find-links dist setuptools
+cd /sources
+
+# Ninja
+tar -xvzf ninja*.tar.gz && cd ninja*/
+export NINJAJOBS=4
+sed -i '/int Guess/a \
+  int   j = 0;\
+  char* jobs = getenv( "NINJAJOBS" );\
+  if ( jobs != NULL ) j = atoi( jobs );\
+  if ( j > 0 ) return j;\
+' src/ninja.cc
+python3 configure.py --bootstrap
+install -vm755 ninja /usr/bin/
+install -vDm644 misc/bash-completion /usr/share/bash-completion/completions/ninja
+install -vDm644 misc/zsh-completion  /usr/share/zsh/site-functions/_ninja
+cd /sources
+
+# Meson
+tar -xvzf meson*.tar.gz && cd meson*/
+pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+pip3 install --no-index --find-links dist meson
+install -vDm644 data/shell-completions/bash/meson /usr/share/bash-completion/completions/meson
+install -vDm644 data/shell-completions/zsh/_meson /usr/share/zsh/site-functions/_meson
+cd /sources
+
+# Coreutils
+tar -xvJf coreutils*.tar.xz && cd coreutils*/
+patch -Np1 -i ../coreutils-9.5-i18n-2.patch
+autoreconf -fiv
+FORCE_UNSAFE_CONFIGURE=1 ./configure \
+            --prefix=/usr            \
+            --enable-no-install-program=kill,uptime
+make -j$(nproc) && make NON_ROOT_USERNAME=tester check-root
+groupadd -g 102 dummy -U tester
+chown -R tester . 
+su tester -c "PATH=$PATH make -k RUN_EXPENSIVE_TESTS=yes check" \
+   < /dev/null
+groupdel dummy
+make install
+mv -v /usr/bin/chroot /usr/sbin
+mv -v /usr/share/man/man1/chroot.1 /usr/share/man/man8/chroot.8
+sed -i 's/"1"/"8"/' /usr/share/man/man8/chroot.8
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
