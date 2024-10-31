@@ -1231,6 +1231,13 @@ install-info --dir-file=/usr/share/info/dir /usr/share/info/com_err.info
 sed 's/metadata_csum_seed,//' -i /etc/mke2fs.conf
 cd /sources
 
+# Sysklogd
+tar -xvzf sysklogd*.tar.gz && cd sysklogd*/
+./configure --prefix=/usr      \
+            --sysconfdir=/etc  \
+            --runstatedir=/run \
+            --without-logger
+make -j$(nproc) && make install
 
 
 
