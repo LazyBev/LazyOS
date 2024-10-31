@@ -54,21 +54,21 @@ install -dv -m 0750 /root
 install -dv -m 1777 /tmp /var/tmp
 ln -sv /proc/self/mounts /etc/mtab
 
-cat > /etc/hosts << EOF
+cat > /etc/hosts << "HOSTS"
 127.0.0.1  localhost $(hostname)
 ::1        localhost
-EOF
+HOSTS
 
-cat > /etc/passwd << "EOF"
+cat > /etc/passwd << "PASSWD"
 root:x:0:0:root:/root:/bin/bash
 bin:x:1:1:bin:/dev/null:/usr/bin/false
 daemon:x:6:6:Daemon User:/dev/null:/usr/bin/false
 messagebus:x:18:18:D-Bus Message Daemon User:/run/dbus:/usr/bin/false
 uuidd:x:80:80:UUID Generation Daemon User:/dev/null:/usr/bin/false
 nobody:x:65534:65534:Unprivileged User:/dev/null:/usr/bin/false
-EOF
+PASSWD
 
-cat > /etc/group << "EOF"
+cat > /etc/group << "GROUP"
 root:x:0:
 bin:x:1:daemon
 sys:x:2:
@@ -93,7 +93,7 @@ uuidd:x:80:
 wheel:x:97:
 users:x:999:
 nogroup:x:65534:
-EOF
+GROUP
 
 localedef -i C -f UTF-8 C.UTF-8
 
@@ -244,9 +244,7 @@ make localedata/install-locales
 localedef -i C -f UTF-8 C.UTF-8
 localedef -i ja_JP -f SHIFT_JIS ja_JP.SJIS 2> /dev/null || true
 
-cat > /etc/nsswitch.conf << "EOF"
-# Begin /etc/nsswitch.conf
-
+cat > /etc/nsswitch.conf << "NSS"
 passwd: files
 group: files
 shadow: files
@@ -258,9 +256,7 @@ protocols: files
 services: files
 ethers: files
 rpc: files
-
-# End /etc/nsswitch.conf
-EOF
+NSS
 
 tar -xf ../../tzdata2024a.tar.gz
 
@@ -282,18 +278,17 @@ tmzn=$(tzselect)
 
 ln -sfv /usr/share/zoneinfo/$tmzn /etc/localtime
 
-cat > /etc/ld.so.conf << "EOF"
+cat > /etc/ld.so.conf << "LDCONF"
 # Begin /etc/ld.so.conf
 /usr/local/lib
 /opt/lib
+LDCONF
 
-EOF
-
-cat >> /etc/ld.so.conf << "EOF"
+cat >> /etc/ld.so.conf << "LDCONF"
 # Add an include directory
 include /etc/ld.so.conf.d/*.conf
+LDCONF
 
-EOF
 mkdir -pv /etc/ld.so.conf.d
 
 # Zlib
@@ -450,6 +445,29 @@ ln -sv pkgconf.1 /usr/share/man/man1/pkg-config.1
 cd $LFS_SRC
 
 # Binutils
-tar
+tar -xvJf binutils*.tar.xz && cd binutils*/
+mkdir -v build && cd build
+../configure --prefix=/usr       \
+             --sysconfdir=/etc   \
+             --enable-gold       \
+             --enable-ld=default \
+             --enable-plugins    \
+             --enable-shared     \
+             --disable-werror    \
+             --enable-64-bit-bfd \
+             --enable-new-dtags  \
+             --with-system-zlib  \
+             --enable-default-hash-style=gnu
+make -j$(nproc) tooldir=/usr && make -k check && make tooldir=/usr install
+rm -fv /usr/lib/lib{bfd,ctf,ctf-nobfd,gprofng,opcodes,sframe}.a
 
+# Gmp
+tar -xvJf gmp*.tar.xz && cd gmp*/
+./configure --prefix=/usr    \
+            --enable-cxx     \
+            --disable-static \
+            --docdir=/usr/share/doc/gmp-6.3.0
+make -j$(nproc) && make html
+make check 2>&1 | tee gmp-check-log
+make install && make install-html
 EOF
