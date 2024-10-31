@@ -44,6 +44,7 @@ mkdir -v build && cd build
              --enable-new-dtags  \
              --enable-default-hash-style=gnu
 make -j$(nproc) && make install
+rm -rf build
 cd $LFS_SRC
 
 # Gcc
@@ -83,6 +84,7 @@ mkdir -v build && cd build
 make -j$(nproc) && make install
 cd .. && cat gcc/limitx.h gcc/glimits.h gcc/limity.h > \
   `dirname $($LFS_TGT-gcc -print-libgcc-file-name)`/include/limits.h
+rm -rf build
 cd $LFS_SRC 
 
 
@@ -99,6 +101,7 @@ mkdir -v build && cd build
     --with-gxx-include-dir=/tools/$LFS_TGT/include/c++/14.2.0
 make -j$(nproc) && make DESTDIR=$LFS install
 rm -v $LFS/usr/lib/lib{stdc++{,exp,fs},supc++}.la
+rm -rf build
 cd $LFS_SRC 
 
 # Linux kernel
@@ -136,6 +139,7 @@ sed '/RTLDLIST=/s@/usr@@g' -i $LFS/usr/bin/ldd
 echo 'int main(){}' | $LFS_TGT-gcc -xvc -
 readelf -l a.out | grep ld-linux
 rm -v a.out
+rm -rf build
 cd $LFS_SRC 
 
 # M4
@@ -169,6 +173,7 @@ popd
 make -j$(nproc) && make DESTDIR=$LFS TIC_PATH=$(pwd)/build/progs/tic install
 ln -sv libncursesw.so $LFS/usr/lib/libncurses.so
 sed -e 's/^#if.*XOPEN.*$/#if 1/' -i $LFS/usr/include/curses.h
+rm -rf build
 cd $LFS_SRC
 
 # Bash
@@ -217,6 +222,7 @@ popd
 ./configure --prefix=/usr --host=$LFS_TGT --build=$(./config.guess)
 make -j$(nproc) FILE_COMPILE=$(pwd)/build/src/file && make DESTDIR=$LFS install
 rm -v $LFS/usr/lib/libmagic.la
+rm -rf build
 cd $LFS_SRC
 
 # Findutils
@@ -309,6 +315,7 @@ mkdir -v build && cd build
              --enable-default-hash-style=gnu
 make -j$(nproc) && make install
 rm -v $LFS/usr/lib/lib{bfd,ctf,ctf-nobfd,opcodes,sframe}.{a,la}
+rm -rf build
 cd $LFS_SRC
 
 # Gcc pass 2
@@ -346,6 +353,7 @@ mkdir -v build && cd build
              --enable-languages=c,c++
 make -j$(nproc) && make DESTDIR=$LFS install
 ln -sv gcc $LFS/usr/bin/cc
+rm -rf build
 cd $LFS_SRC
 
 su - root -c "cd /home/lazybev/LazyOS && chmod +x ./Base_System.sh.sh && ./Base_System.sh.sh"
