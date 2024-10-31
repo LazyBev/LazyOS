@@ -28,10 +28,8 @@ else
 	mount -vt tmpfs -o nosuid,nodev tmpfs $LFS/dev/shm
 fi
 
-# Chroot into the environment and run commands
 chroot "$LFS" /usr/bin/env -i HOME=/root TERM="$TERM" PS1='(lfs chroot) \u:\w\$ ' \
     PATH=/usr/bin:/usr/sbin MAKEFLAGS="-j$(nproc)" TESTSUITEFLAGS="-j$(nproc)" /bin/bash --login <<EOF
-# Commands inside chroot
 set -e
 
 mkdir -pv /{boot,home,mnt,opt,srv}
@@ -189,7 +187,7 @@ cd /sources
 
 # Glibc
 tar -xvJf glibc*.tar.xz && cd glibc*/
-patch -Np1 -i ../glibc-2.40-fhs-1.patch
+patch -Np1 -i ../glibc*.patch
 mkdir -v build && cd build
 echo "rootsbindir=/usr/sbin" > configparms
 ../configure --prefix=/usr                            \
@@ -300,7 +298,7 @@ cd /sources
 
 # Bzip
 tar -xvzf bzip2*.tar.gz && cd bzip2*/
-patch -Np1 -i ../bzip2-1.0.8-install_docs-1.patch
+patch -Np1 -i ../bzip2*.patch
 sed -i 's@\(ln -s -f \)$(PREFIX)/bin/@\1@' Makefile
 sed -i "s@(PREFIX)/man@(PREFIX)/share/man@g" Makefile
 make -j$(nproc) -f Makefile-libbz2_so && make clean && make -j$(nproc) && make PREFIX=/usr install
@@ -412,7 +410,7 @@ cd /sources
 # Expect
 tar -xvzf expect*.tar.gz && cd expect*/
 python3 -c 'from pty import spawn; spawn(["echo", "ok"])'
-patch -Np1 -i ../expect-5.45.4-gcc14-1.patch
+patch -Np1 -i ../expect*.patch
 ./configure --prefix=/usr           \
             --with-tcl=/usr/lib     \
             --enable-shared         \
@@ -931,7 +929,7 @@ cd /sources
 
 # Coreutils
 tar -xvJf coreutils*.tar.xz && cd coreutils*/
-patch -Np1 -i ../coreutils-9.5-i18n-2.patch
+patch -Np1 -i ../coreutils*.patch
 autoreconf -fiv
 FORCE_UNSAFE_CONFIGURE=1 ./configure \
             --prefix=/usr            \
@@ -1007,7 +1005,7 @@ cd /sources
 
 # Kbd
 tar -xvJf kbd*.tar.xz && cd kbd*/
-patch -Np1 -i ../kbd-2.6.4-backspace-1.patch
+patch -Np1 -i ../kbd*.patch
 sed -i '/RESIZECONS_PROGS=/s/yes/no/' configure
 sed -i 's/resizecons.8 //' docs/man/man8/Makefile.in
 ./configure --prefix=/usr --disable-vlock
@@ -1238,12 +1236,24 @@ tar -xvzf sysklogd*.tar.gz && cd sysklogd*/
             --runstatedir=/run \
             --without-logger
 make -j$(nproc) && make install
+cat > /etc/syslog.conf << "SYSLOG"
+auth,authpriv.* -/var/log/auth.log
+*.*;auth,authpriv.none -/var/log/sys.log
+daemon.* -/var/log/daemon.log
+kern.* -/var/log/kern.log
+mail.* -/var/log/mail.log
+user.* -/var/log/user.log
+*.emerg *
+secure_mode 2
+SYSLOG
 
+# Sysvinit
+tar -xvJf sysvinit*.tar.xz && cd sysvinit*/
+patch -Np1 -i ../sysvinit*.patch
+make -j$(nproc) && make install
 
-
-
-
-
-
-
+rm -rf /tmp/{*,.*}
+find /usr/lib /usr/libexec -name \*.la -delete
+find /usr -depth -name $(uname -m)-lfs-linux-gnu\* | xargs rm -rf
+userdel -r tester
 EOF
