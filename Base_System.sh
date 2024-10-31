@@ -1591,7 +1591,6 @@ menuentry "Firmware Setup" {
 }
 CFG
 
-
 echo 12.2 > /etc/lfs-release
 
 cat > /etc/lsb-release << "LSBREL"
@@ -1609,6 +1608,16 @@ PRETTY_NAME="LazyOS"
 VERSION_CODENAME="NaomiTheFem"
 HOME_URL="https://www.linuxfromscratch.org/lfs/"
 OSREL
+
+# Git
+cd /sources && tar -xvJf git*.tar.xz && cd git*/
+./configure --prefix=/usr \
+            --with-gitconfig=/etc/gitconfig \
+            --with-python=python3 &&
+make
+cd /sources
+
+
 
 
 
