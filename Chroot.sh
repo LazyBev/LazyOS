@@ -114,14 +114,13 @@ tar -xvJf gettext*.tar.xz && cd gettext*/
 ./configure --disable-shared
 make -j$(nproc)
 cp -v gettext-tools/src/{msgfmt,msgmerge,xgettext} /usr/bin
-cd $LFS_SRC
-
+cd /sources
 # Bison
 tar -xvJf gettext*.tar.xz && cd gettext*/ 
 ./configure --prefix=/usr \
             --docdir=/usr/share/doc/bison-3.8.2
 make -j$(nproc) && make install
-cd $LFS_SRC
+cd /sources
 
 # Perl
 tar -xvJf perl*.tar.xz && cd perl*/ 
@@ -136,7 +135,7 @@ sh Configure -des                                         \
              -D vendorlib=/usr/lib/perl5/5.40/vendor_perl \
              -D vendorarch=/usr/lib/perl5/5.40/vendor_perl
 make -j$(nproc) && make install
-cd $LFS_SRC
+cd /sources
 
 # Python
 tar -xvJf python*.tar.xz && cd python*/
@@ -144,16 +143,16 @@ tar -xvJf python*.tar.xz && cd python*/
             --enable-shared \
             --without-ensurepip
 make -j$(nproc) && make install
-cd $LFS_SRC
+cd /sources
 
 # Texinfo
 tar -xvJf texinfo*.tar.xz && cd texinfo*/
 ./configure --prefix=/usr
 make -j$(nproc) && make install
-cd $LFS_SRC
+cd /sources
 
 # Util-linux
-tar -xvJf util-linux*.tar.xz && cd Util-linux*/
+tar -xvJf util-linux*.tar.xz && cd util-linux*/
 mkdir -pv /var/lib/hwclock
 ./configure --libdir=/usr/lib     \
             --runstatedir=/run    \
@@ -170,7 +169,6 @@ mkdir -pv /var/lib/hwclock
             ADJTIME_PATH=/var/lib/hwclock/adjtime \
             --docdir=/usr/share/doc/util-linux-2.40.2
 make -j$(nproc) && make install
-cd $LFS_SRC
 
 # Cleanup
 rm -rf /usr/share/{info,man,doc}/*
@@ -190,3 +188,31 @@ tar -cJpf $HOME/lfs-temp-tools-12.2.tar.xz .
 
 echo -e "Anytime you want to use this backup just exit the script and\ntype in 'cd $LFS && rm -rf ./* && tar -xpf $HOME/lfs-temp-tools-12.2.tar.xz'"
 sleep 5
+
+# Man pages
+cd $LFS_SRC
+tar -xvJf man-pages*.tar.xz && cd man-pages*/
+rm -v man3/crypt*
+make prefix=/usr install
+cd $LFS_SRC
+
+# Iana-etc
+iana-etc
+tar -xvJf iana-etc*.tar.xz && cd iana-etc*/
+cp services protocols /etc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
