@@ -460,6 +460,7 @@ mkdir -v build && cd build
              --enable-default-hash-style=gnu
 make -j$(nproc) tooldir=/usr && make -k check && make tooldir=/usr install
 rm -fv /usr/lib/lib{bfd,ctf,ctf-nobfd,gprofng,opcodes,sframe}.a
+cd $LFS_SRC
 
 # Gmp
 tar -xvJf gmp*.tar.xz && cd gmp*/
@@ -470,4 +471,73 @@ tar -xvJf gmp*.tar.xz && cd gmp*/
 make -j$(nproc) && make html
 make check 2>&1 | tee gmp-check-log
 make install && make install-html
+cd $LFS_SRC
+
+# Mpfr
+tar -xvJf mpfr*.tar.xz && cd mpfr*/
+./configure --prefix=/usr        \
+            --disable-static     \
+            --enable-thread-safe \
+            --docdir=/usr/share/doc/mpfr-4.2.1
+make && make html
+make check
+make install && make install-html
+cd $LFS_SRC
+
+# Mpc
+tar -xvzf mpc*.tar.gz && cd mpc*/
+./configure --prefix=/usr    \
+            --disable-static \
+            --docdir=/usr/share/doc/mpc-1.3.1
+make && make html
+make check
+make install && make install-html
+cd $LFS_SRC
+
+# Attr
+tar -xvzf attr*.tar.gz && cd attr*/
+./configure --prefix=/usr     \
+            --disable-static  \
+            --sysconfdir=/etc \
+            --docdir=/usr/share/doc/attr-2.5.2
+make -j$(nproc) && make check
+make install
+cd $LFS_SRC
+
+# Acl
+tar -xvzf acl*.tar.gz && cd acl*/
+./configure --prefix=/usr         \
+            --disable-static      \
+            --docdir=/usr/share/doc/acl-2.3.2
+make -j$(nproc) && make install
+cd $LFS_SRC
+
+# Libcap
+tar -xvJf libcap*.tar.xz && cd libcap*/
+sed -i '/install -m.*STA/d' libcap/Makefile
+make -j$(nproc) prefix=/usr lib=lib 
+make test && make prefix=/usr lib=lib install
+cd $LFS_SRC
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   
 EOF
