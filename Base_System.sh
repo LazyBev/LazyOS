@@ -989,16 +989,20 @@ make -j$(nproc) && make check
 make install
 cd /sources
 
-# Grub
-tar -xvJf grub*.tar.xz && cd grub*/
-unset {C,CPP,CXX,LD}FLAGS
-echo depends bli part_gpt > grub-core/extra_deps.lst
-./configure --prefix=/usr          \
-            --sysconfdir=/etc      \
-            --disable-efiemu       \
-            --disable-werror
-make -j$(nproc) && make install
-mv -v /etc/bash_completion.d/grub /usr/share/bash-completion/completions
+# Gzip
+tar -xvJf gzip*.tar.xz && cd gzip*/
+./configure --prefix=/usr
+make -j$(nproc) && make check
+make install
+cd /sources
+
+# Iproute2
+tar -xvJf iproute2*.tar.xz && cd iproute2*/
+sed -i /ARPD/d Makefile
+rm -fv man/man8/arpd.8
+make -j$(nproc) NETNS_RUN_DIR=/run/netns && make SBINDIR=/usr/sbin install
+mkdir -pv /usr/share/doc/iproute2-6.10.0
+cp -v COPYING README* /usr/share/doc/iproute2-6.10.0
 
 
 
@@ -1010,4 +1014,10 @@ mv -v /etc/bash_completion.d/grub /usr/share/bash-completion/completions
 
 
 
-#EOF
+
+
+
+
+
+
+EOF
