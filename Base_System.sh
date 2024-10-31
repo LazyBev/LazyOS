@@ -670,13 +670,49 @@ make install
 chmod -v 0755 /usr/lib/preloadable_libintl.so
 cd /sources
 
+# Bison
+tar -xvJf bison*.tar.xz && cd bison*/
+./configure --prefix=/usr --docdir=/usr/share/doc/bison-3.8.2
+make -j$(nproc) && make check
+make install
+cd /sources
+
+# Grep
+tar -xvJf grep*.tar.xz && cd grep*/
+sed -i "s/echo/#echo/" src/egrep.sh
+./configure --prefix=/usr
+make -j$(nproc) && make check
+make install
+cd /sources
+
+# Bash
+tar -xvzf bash*.tar.gz && cd bash*/
+./configure --prefix=/usr             \
+            --without-bash-malloc     \
+            --with-installed-readline \
+            bash_cv_strtold_broken=no \
+            --docdir=/usr/share/doc/bash-5.2.32
+make -j$(nproc) && chown -R tester .
+su -s /usr/bin/expect tester << "TEST"
+set timeout -1
+spawn make tests
+expect eof
+lassign [wait] _ _ _ value
+exit $value
+TEST
+make install
+exec /usr/bin/bash --login
+
+# Libtool
+tar -xvJf libtool*.tar.xz && cd libtool*/
+./configure --prefix=/usr
+make -j$(nproc) && make -k check
+make install
+rm -fv /usr/lib/libltdl.a
 
 
 
 
-
-
-   
 
 
 
