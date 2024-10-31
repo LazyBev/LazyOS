@@ -348,4 +348,4 @@ make -j$(nproc) && make DESTDIR=$LFS install
 ln -sv gcc $LFS/usr/bin/cc
 cd $LFS_SRC
 
-su - root -c "cd /home/lazybev/LazyOS && chmod +x ./Chroot.sh && ./Chroot.sh"
+su - root -c "cd /home/lazybev/LazyOS && chmod +x ./Base_System.sh.sh && ./Base_System.sh.sh"
