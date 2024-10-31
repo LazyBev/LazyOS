@@ -23,9 +23,9 @@ mount -vt sysfs sysfs $LFS/sys
 mount -vt tmpfs tmpfs $LFS/run
 
 if [ -h $LFS/dev/shm ]; then
-  install -v -d -m 1777 $LFS$(realpath /dev/shm)
+	install -v -d -m 1777 $LFS$(realpath /dev/shm)
 else
-  mount -vt tmpfs -o nosuid,nodev tmpfs $LFS/dev/shm
+	mount -vt tmpfs -o nosuid,nodev tmpfs $LFS/dev/shm
 fi
 
 # Chroot into the environment and run commands
@@ -212,7 +212,7 @@ echo "rootsbindir=/usr/sbin" > configparms
              --enable-stack-protector=strong          \
              --disable-nscd                           \
              libc_cv_slibdir=/usr/lib
-make -j$(nproc)
+make -j$(nproc) && make check
 touch /etc/ld.so.conf
 sed '/test-installation/s@$(PERL)@echo not running@' -i ../Makefile
 make install
@@ -283,7 +283,7 @@ mkdir -pv $ZONEINFO/{posix,right}
 
 for tz in etcetera southamerica northamerica europe africa antarctica  \
           asia australasia backward; do
-    zic -L /dev/null   -d $ZONEINFO       ${tz}
+	zic -L /dev/null   -d $ZONEINFO       ${tz}
     zic -L /dev/null   -d $ZONEINFO/posix ${tz}
     zic -L leapseconds -d $ZONEINFO/right ${tz}
 done
@@ -295,3 +295,102 @@ unset ZONEINFO
 tmzn=$(tzselect)
 
 ln -sfv /usr/share/zoneinfo/$tmzn /etc/localtime
+
+cat > /etc/ld.so.conf << "EOF"
+# Begin /etc/ld.so.conf
+/usr/local/lib
+/opt/lib
+
+EOF
+
+cat >> /etc/ld.so.conf << "EOF"
+# Add an include directory
+include /etc/ld.so.conf.d/*.conf
+
+EOF
+mkdir -pv /etc/ld.so.conf.d
+
+# Zlib
+tar -xvzf zlib*.tar.gz && cd zlib*/
+./configure --prefix=/usr
+make -j$(nproc) && make check && make install
+rm -fv /usr/lib/libz.a
+cd $LFS_SRC
+
+# Bzip
+tar -xvzf bzip2*.tar.gz && cd bzip2*/
+patch -Np1 -i ../bzip2-1.0.8-install_docs-1.patch
+sed -i 's@\(ln -s -f \)$(PREFIX)/bin/@\1@' Makefile
+sed -i "s@(PREFIX)/man@(PREFIX)/share/man@g" Makefile
+make -j$(nproc) -f Makefile-libbz2_so && make clean && make -j$(nproc) && make PREFIX=/usr install
+cp -av libbz2.so.* /usr/lib
+ln -sv libbz2.so.1.0.8 /usr/lib/libbz2.so
+cp -v bzip2-shared /usr/bin/bzip2
+for i in /usr/bin/{bzcat,bunzip2}; do
+	ln -sfv bzip2 $i
+done
+rm -fv /usr/lib/libbz2.a
+cd $LFS_SRC
+
+# Xz
+tar -xvJf xz*.tar.xz && cd xz*/
+./configure --prefix=/usr    \
+            --disable-static \
+            --docdir=/usr/share/doc/xz-5.6.2
+make -j$(nproc) && make check && make install
+cd $LFS_SRC
+
+# Lz4
+tar -xvzf lz4*.tar.gz && cd lz4*/
+make -j$(nproc) BUILD_STATIC=no PREFIX=/usr && make -j1 check && make BUILD_STATIC=no PREFIX=/usr install
+cd $LFS_SRC
+
+# Zstd
+tar -xvzf zstd*.tar.gz && cd zstd*/
+make -j$(nproc) prefix=/usr && make check && make prefix=/usr install
+rm -v /usr/lib/libzstd.a
+cd $LFS_SRC
+
+# File
+tar -xvzf file*.tar.gz && cd file*/
+/configure --prefix=/usr
+make -j$(nproc) && make check && make install
+cd $LFS_SRC
+
+# Readline
+tar -xvzf readline*.tar.gz && cd readline*/
+sed -i '/MV.*old/d' Makefile.in
+sed -i '/{OLDSUFF}/c:' support/shlib-install
+sed -i 's/-Wl,-rpath,[^ ]*//' support/shobj-conf
+./configure --prefix=/usr    \
+            --disable-static \
+            --with-curses    \
+            --docdir=/usr/share/doc/readline-8.2.13
+make -j$(nproc) SHLIB_LIBS="-lncursesw" && make SHLIB_LIBS="-lncursesw" install
+install -v -m644 doc/*.{ps,pdf,html,dvi} /usr/share/doc/readline-8.2.13
+cd $LFS_SRC
+
+# M4
+tar -xvJf m4*.tar.xz && cd m4*/
+./configure --prefix=/usr
+make -j$(nproc) && make check && make install
+cd $LFS_SRC
+
+# Bc
+tar -xvJf bc*.tar.xz && cd bc*/
+CC=gcc ./configure --prefix=/usr -G -O3 -r
+make -j$(nproc) && make test && make install
+cd $LFS_SRC
+
+
+
+
+
+
+
+
+
+
+
+
+
