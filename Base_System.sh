@@ -1655,16 +1655,18 @@ tar -xvzf hwdata*.tar.gz && cd hwdata*/
 make install
 cd /sources
 
+# Wget
+tar -xvzf wget*.tar.gz && cd wget*/
+./configure --prefix=/usr      \
+            --sysconfdir=/etc  \
+            --with-ssl=openssl &&
+make && make install
+cd /sources
 
+if [[ head -n7 /proc/cpuinfo | grep -i 'AMD' ]]; then
 
+else
 
-
-
-
-
-
-
-
-
+fi
      
 EOF
