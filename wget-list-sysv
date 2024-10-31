@@ -29,6 +29,10 @@ https://ftp.gnu.org/gnu/gperf/gperf-3.1.tar.gz
 https://ftp.gnu.org/gnu/grep/grep-3.11.tar.xz
 https://ftp.gnu.org/gnu/groff/groff-1.23.0.tar.gz
 https://ftp.gnu.org/gnu/grub/grub-2.12.tar.xz
+https://github.com/rhboot/efibootmgr/archive/18/efibootmgr-18.tar.gz
+http://ftp.rpm.org/popt/releases/popt-1.x/popt-1.19.tar.gz
+https://github.com/rhboot/efivar/archive/39/efivar-39.tar.gz
+https://downloads.sourceforge.net/freetype/freetype-2.13.3.tar.xz
 https://ftp.gnu.org/gnu/gzip/gzip-1.13.tar.xz
 https://github.com/Mic92/iana-etc/releases/download/20240806/iana-etc-20240806.tar.gz
 https://ftp.gnu.org/gnu/inetutils/inetutils-2.5.tar.xz
