@@ -539,19 +539,136 @@ make -j$(nproc)
 cp -av --remove-destination .libs/libcrypt.so.1* /usr/lib
 cd /sources
 
+# Shadow
+tar -xvJf shadow*.tar.xz && cd shadow*/
+sed -i 's/groups$(EXEEXT) //' src/Makefile.in
+find man -name Makefile.in -exec sed -i 's/groups\.1 / /'   {} \;
+find man -name Makefile.in -exec sed -i 's/getspnam\.3 / /' {} \;
+find man -name Makefile.in -exec sed -i 's/passwd\.5 / /'   {} \;
+sed -i 's:DICTPATH.*:DICTPATH\t/lib/cracklib/pw_dict:' etc/login.defs
+touch /usr/bin/passwd
+./configure --sysconfdir=/etc   \
+            --disable-static    \
+            --with-{b,yes}crypt \
+            --without-libbsd    \
+            --with-group-name-max-length=32
+make -j$(nproc)
+make exec_prefix=/usr install && make -C man install-man
+pwconv && grpconv
+mkdir -p /etc/default && useradd -D --gid 999
+sed -i '/MAIL/s/yes/no/' /etc/default/useradd
+passwd root
+cd /sources
 
+# Gcc
+tar -xvJf gcc*.tar.xz && cd gcc*/
+case $(uname -m) in
+	x86_64)
+    	sed -e '/m64=/s/lib64/lib/' \
+        	-i.orig gcc/config/i386/t-linux64
+  	;;
+esac
+mkdir -v build && cd build
+../configure --prefix=/usr            \
+             LD=ld                    \
+             --enable-languages=c,c++ \
+             --enable-default-pie     \
+             --enable-default-ssp     \
+             --enable-host-pie        \
+             --disable-multilib       \
+             --disable-bootstrap      \
+             --disable-fixincludes    \
+             --with-system-zlib
+make -j$(nproc)
+ulimit -s -H unlimited
+sed -e '/cpython/d'               -i ../gcc/testsuite/gcc.dg/plugin/plugin.exp
+sed -e 's/no-pic /&-no-pie /'     -i ../gcc/testsuite/gcc.target/i386/pr113689-1.c
+sed -e 's/300000/(1|300000)/'     -i ../libgomp/testsuite/libgomp.c-c++-common/pr109062.c
+sed -e 's/{ target nonpic } //' \
+    -e '/GOTPCREL/d'              -i ../gcc/testsuite/gcc.target/i386/fentryname3.c
+chown -R tester .
+su tester -c "PATH=$PATH make -k check"
+../contrib/test_summary
+make install
+chown -v -R root:root \
+    /usr/lib/gcc/$(gcc -dumpmachine)/14.2.0/include{,-fixed}
+ln -svr /usr/bin/cpp /usr/lib
+ln -sv gcc.1 /usr/share/man/man1/cc.1
+ln -sfv ../../libexec/gcc/$(gcc -dumpmachine)/14.2.0/liblto_plugin.so \
+        /usr/lib/bfd-plugins/
+echo 'int main(){}' > dummy.c
+cc dummy.c -v -Wl,--verbose &> dummy.log
+readelf -l a.out | grep ': /lib'
+grep -E -o '/usr/lib.*/S?crt[1in].*succeeded' dummy.log
+grep -B4 '^ /usr/include' dummy.log
+grep 'SEARCH.*/usr/lib' dummy.log |sed 's|; |\n|g'
+grep "/lib.*/libc.so.6 " dummy.log
+grep found dummy.log
+rm -v dummy.c a.out dummy.log
+mkdir -pv /usr/share/gdb/auto-load/usr/lib
+mv -v /usr/lib/*gdb.py /usr/share/gdb/auto-load/usr/lib
+cd /sources
 
+# Ncurses
+tar -xvzf ncurses*.tar.gz && cd ncurses*/
+./configure --prefix=/usr           \
+            --mandir=/usr/share/man \
+            --with-shared           \
+            --without-debug         \
+            --without-normal        \
+            --with-cxx-shared       \
+            --enable-pc-files       \
+            --with-pkg-config-libdir=/usr/lib/pkgconfig
+make -j$(nproc) && make DESTDIR=$PWD/dest install
+install -vm755 dest/usr/lib/libncursesw.so.6.5 /usr/lib
+rm -v  dest/usr/lib/libncursesw.so.6.5
+sed -e 's/^#if.*XOPEN.*$/#if 1/' \
+    -i dest/usr/include/curses.h
+cp -av dest/* /
+for lib in ncurses form panel menu ; do
+    ln -sfv lib${lib}w.so /usr/lib/lib${lib}.so
+    ln -sfv ${lib}w.pc    /usr/lib/pkgconfig/${lib}.pc
+done
+ln -sfv libncursesw.so /usr/lib/libcurses.so
+cp -v -R doc -T /usr/share/doc/ncurses-6.5
+make distclean
+./configure --prefix=/usr    \
+            --with-shared    \
+            --without-normal \
+            --without-debug  \
+            --without-cxx-binding \
+            --with-abi-version=5
+make sources libs
+cp -av lib/lib*.so.5* /usr/lib
+cd /sources
 
+# Sed
+tar -xvJf sed*.tar.xz && cd sed*/
+./configure --prefix=/usr
+make && make html
+chown -R tester .
+su tester -c "PATH=$PATH make check"
+make install
+install -d -m755           /usr/share/doc/sed-4.9
+install -m644 doc/sed.html /usr/share/doc/sed-4.9
+cd /sources
 
+# Psmisc
+tar -xvJf psmisc*.tar.xz && cd psmisc*/
+./configure --prefix=/usr
+make -j$(nproc) && make check
+make install
+cd /sources
 
-
-
-
-
-
-
-
-
+# Gettext
+tar -xvJf gettext*.tar.xz && cd gettext*/
+./configure --prefix=/usr    \
+            --disable-static \
+            --docdir=/usr/share/doc/gettext-0.22.5
+make -j$(nproc) && make check
+make install
+chmod -v 0755 /usr/lib/preloadable_libintl.so
+cd /sources
 
 
 
@@ -560,4 +677,11 @@ cd /sources
 
 
    
+
+
+
+
+
+
+
 EOF
