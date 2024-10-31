@@ -946,6 +946,59 @@ make install
 mv -v /usr/bin/chroot /usr/sbin
 mv -v /usr/share/man/man1/chroot.1 /usr/share/man/man8/chroot.8
 sed -i 's/"1"/"8"/' /usr/share/man/man8/chroot.8
+cd /sources
+
+# Check
+tar -xvzf check*.tar.gz & cd check*/
+/configure --prefix=/usr --disable-static
+make -j$(nproc) && make check
+make docdir=/usr/share/doc/check-0.15.2 install
+cd /sources
+
+# Diffutils
+tar -xvJf diffutils*.tar.xz && cd diffutils*/
+./configure --prefix=/usr
+make -j$(nproc) && make check
+make install
+cd /sources
+
+# Gawk
+tar -xvJf gawk*.tar.xz && cd gawk*/
+sed -i 's/extras//' Makefile.in
+./configure --prefix=/usr
+make -j$(nproc)
+chown -R tester .
+su tester -c "PATH=$PATH make check"
+rm -f /usr/bin/gawk-5.3.0
+make install
+cd /sources
+
+# Findutils
+tar -xvJf findutils*.tar.xz && cd findutils*/
+./configure --prefix=/usr --localstatedir=/var/lib/locate
+make
+chown -R tester .
+su tester -c "PATH=$PATH make check"
+make install
+cd /sources
+
+# Groff
+tar -xvzf groff*.tar.gz && cd groff*/
+PAGE=<paper_size> ./configure --prefix=/usr
+make -j$(nproc) && make check
+make install
+cd /sources
+
+# Grub
+tar -xvJf grub*.tar.xz && cd grub*/
+unset {C,CPP,CXX,LD}FLAGS
+echo depends bli part_gpt > grub-core/extra_deps.lst
+./configure --prefix=/usr          \
+            --sysconfdir=/etc      \
+            --disable-efiemu       \
+            --disable-werror
+make -j$(nproc) && make install
+mv -v /etc/bash_completion.d/grub /usr/share/bash-completion/completions
 
 
 
@@ -957,13 +1010,4 @@ sed -i 's/"1"/"8"/' /usr/share/man/man8/chroot.8
 
 
 
-
-
-
-
-
-
-
-
-
-EOF
+#EOF
