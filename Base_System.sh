@@ -1632,6 +1632,39 @@ install -v -m644    doc/html/* \
                     /usr/share/doc/cpio-2.15/html &&
 install -v -m644    doc/cpio.{html,txt} \
                     /usr/share/doc/cpio-2.15
+cd /sources
+
+# Pci utils
+tar -xvzf pciutils*.tar.gz && cd pciutils*/
+sed -r '/INSTALL/{/PCI_IDS|update-pciids /d; s/update-pciids.8//}' \
+    -i Makefile
+make PREFIX=/usr                \
+     SHAREDIR=/usr/share/hwdata \
+     SHARED=yes
+make PREFIX=/usr                \
+     SHAREDIR=/usr/share/hwdata \
+     SHARED=yes                 \
+     install install-lib        &&
+
+chmod -v 755 /usr/lib/libpci.so
+cd /sources
+
+# Hwdata
+tar -xvzf hwdata*.tar.gz && cd hwdata*/
+./configure --prefix=/usr --disable-blacklist
+make install
+cd /sources
 
 
+
+
+
+
+
+
+
+
+
+
+     
 EOF
