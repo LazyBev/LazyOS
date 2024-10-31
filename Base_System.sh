@@ -174,20 +174,6 @@ make -j$(nproc) && make install
 rm -rf /usr/share/{info,man,doc}/*
 find /usr/{lib,libexec} -name \*.la -delete
 rm -rf /tools
-EOF
-
-mountpoint -q $LFS/dev/shm && umount $LFS/dev/shm
-umount $LFS/dev/pts
-umount $LFS/{sys,proc,run,dev}
-
-echo -e "Making backup..."
-sleep 2
-
-cd $LFS
-tar -cJpf $HOME/lfs-temp-tools-12.2.tar.xz .
-
-echo -e "Anytime you want to use this backup just exit the script and\ntype in 'cd $LFS && rm -rf ./* && tar -xpf $HOME/lfs-temp-tools-12.2.tar.xz'"
-sleep 5
 
 # Man pages
 cd $LFS_SRC
@@ -382,15 +368,88 @@ CC=gcc ./configure --prefix=/usr -G -O3 -r
 make -j$(nproc) && make test && make install
 cd $LFS_SRC
 
+# Flex
+tar -xvzf flex*.tar.gz && cd flex*/
+./configure --prefix=/usr \
+            --docdir=/usr/share/doc/flex-2.6.4 \
+            --disable-static
+make -j$(nproc) && make check && make install
+ln -sv flex   /usr/bin/lex
+ln -sv flex.1 /usr/share/man/man1/lex.1
+cd $LFS_SRC
 
+# Tcl
+tar -xvzf tcl*src.tar.gz && cd tcl*/
+SRCDIR=$(pwd)
+cd unix
+./configure --prefix=/usr           \
+            --mandir=/usr/share/man \
+            --disable-rpath
+make -j$(nproc)
 
+sed -e "s|$SRCDIR/unix|/usr/lib|" \
+    -e "s|$SRCDIR|/usr/include|"  \
+    -i tclConfig.sh
 
+sed -e "s|$SRCDIR/unix/pkgs/tdbc1.1.7|/usr/lib/tdbc1.1.7|" \
+    -e "s|$SRCDIR/pkgs/tdbc1.1.7/generic|/usr/include|"    \
+    -e "s|$SRCDIR/pkgs/tdbc1.1.7/library|/usr/lib/tcl8.6|" \
+    -e "s|$SRCDIR/pkgs/tdbc1.1.7|/usr/include|"            \
+    -i pkgs/tdbc1.1.7/tdbcConfig.sh
 
+sed -e "s|$SRCDIR/unix/pkgs/itcl4.2.4|/usr/lib/itcl4.2.4|" \
+    -e "s|$SRCDIR/pkgs/itcl4.2.4/generic|/usr/include|"    \
+    -e "s|$SRCDIR/pkgs/itcl4.2.4|/usr/include|"            \
+    -i pkgs/itcl4.2.4/itclConfig.sh
 
+unset SRCDIR
+make test && make install
+chmod -v u+w /usr/lib/libtcl8.6.so
+make install-private-headers
+ln -sfv tclsh8.6 /usr/bin/tclsh     
+mv /usr/share/man/man3/{Thread,Tcl_Thread}.3
+cd ..
+tar -xf ../tcl8.6.14-html.tar.gz --strip-components=1
+mkdir -v -p /usr/share/doc/tcl-8.6.14
+cp -v -r  ./html/* /usr/share/doc/tcl-8.6.14
+cd $LFS_SRC
 
+# Expect
+tar -xvzf expect*.tar.gz && cd expect*/
+python3 -c 'from pty import spawn; spawn(["echo", "ok"])'
+patch -Np1 -i ../expect-5.45.4-gcc14-1.patch
+./configure --prefix=/usr           \
+            --with-tcl=/usr/lib     \
+            --enable-shared         \
+            --disable-rpath         \
+            --mandir=/usr/share/man \
+            --with-tclinclude=/usr/include
+make -j$(nproc) && make test && make install
+ln -svf expect5.45.4/libexpect5.45.4.so /usr/lib
+cd $LFS_SRC
 
+# DejaGNU
+tar -xvzf dejagnu*.tar.gz && cd dejagnu*/
+mkdir -v build && cd build
+../configure --prefix=/usr
+makeinfo --html --no-split -o doc/dejagnu.html ../doc/dejagnu.texi
+makeinfo --plaintext       -o doc/dejagnu.txt  ../doc/dejagnu.texi
+make check && make install
+install -v -dm755  /usr/share/doc/dejagnu-1.6.3
+install -v -m644   doc/dejagnu.{html,txt} /usr/share/doc/dejagnu-1.6.3
+cd $LFS_SRC
 
+# Pkgconf
+tar -xvJf pkgconf*.tar.xz && cd pkgconf*/
+./configure --prefix=/usr              \
+            --disable-static           \
+            --docdir=/usr/share/doc/pkgconf-2.3.0
+make -j$(nproc) && make install
+ln -sv pkgconf   /usr/bin/pkg-config
+ln -sv pkgconf.1 /usr/share/man/man1/pkg-config.1
+cd $LFS_SRC
 
+# Binutils
+tar
 
-
-
+EOF
