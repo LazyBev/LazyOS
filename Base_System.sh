@@ -986,7 +986,7 @@ PAGE=<paper_size> ./configure --prefix=/usr
 make -j$(nproc) && make check
 make install
 cd /sources
-
+   
 # Gzip
 tar -xvJf gzip*.tar.xz && cd gzip*/
 ./configure --prefix=/usr
@@ -1453,6 +1453,163 @@ cd /sources
 tar -xvJf linux*.tar.xz && cd linux*/
 make mrproper
 make defconfig
+sed -i '/#/d' .config
+sed -i 's/CONFIG_DRM=y/CONFIG_DRM=m/' .config
+sed -i 's/CONFIG_NLS_CODEPAGE_437=y/CONFIG_NLS_CODEPAGE_437=m/' .config
+sed -i 's/CONFIG_NLS_ISO8859_1=y/CONFIG_NLS_ISO8859_1=m/' .config
+{
+	CONFIG_PSI=y
+	CONFIG_MEMCG=y
+	CONFIG_DRM_FBDEV_EMULATION=y
+	CONFIG_FRAMEBUFFER_CONSOLE=y
+ 	CONFIG_IRQ_REMAP=y
+  	CONFIG_X86_X2APIC=y
+   	CONFIG_HIGHMEM64G=y
+	if [[ "$disk" = "/dev/nvme0n1" ]]; then
+ 		CONFIG_BLK_DEV_NVME=y
+   	fi
+	CONFIG_PARTITION_ADVANCED=y
+ 	CONFIG_SYSFB_SIMPLEFB=y
+  	CONFIG_DRM_SIMPLEDRM=y
+   	CONFIG_FRAMEBUFFER_CONSOLE=y
+} >> .config
+make -j$(nproc) && make modules_install
+mount /boot
+cp -iv arch/x86/boot/bzImage /boot/vmlinuz-6.10.5-lfs-12.2
+cp -iv System.map /boot/System.map-6.10.5
+cp -iv .config /boot/config-6.10.5
+cp -r Documentation -T /usr/share/doc/linux-6.10.5
+chown -R 0:0
+install -v -m755 -d /etc/modprobe.d
+cat > /etc/modprobe.d/usb.conf << "MODPROB"
+install ohci_hcd /sbin/modprobe ehci_hcd ; /sbin/modprobe -i ohci_hcd ; true
+install uhci_hcd /sbin/modprobe ehci_hcd ; /sbin/modprobe -i uhci_hcd ; true
+MODPROB
+cd /sources
+
+# Grub with UEFI support
+tar -xvJf grub*.tar.xz && cd grub*/
+mkdir -pv /usr/share/fonts/unifont &&
+gunzip -c ../unifont-15.1.05.pcf.gz > /usr/share/fonts/unifont/unifont.pcf
+unset {C,CPP,CXX,LD}FLAGS
+echo depends bli part_gpt > grub-core/extra_deps.lst
+case $(uname -m) in i?86 )
+    tar xf ../gcc*.tar.xz
+    mkdir gcc*/build
+    pushd gcc*/build
+        ../configure --prefix=$PWD/../../x86_64-gcc \
+                     --target=x86_64-linux-gnu      \
+                     --with-system-zlib             \
+                     --enable-languages=c,c++       \
+                     --with-ld=/usr/bin/ld
+        make all-gcc
+        make install-gcc
+    popd
+    export TARGET_CC=$PWD/x86_64-gcc/bin/x86_64-linux-gnu-gcc
+esac
+./configure --prefix=/usr        \
+            --sysconfdir=/etc    \
+            --disable-efiemu     \
+            --enable-grub-mkfont \
+            --with-platform=efi  \
+            --target=x86_64      \
+            --disable-werror     &&
+unset TARGET_CC &&
+make && make install &&
+mv -v /etc/bash_completion.d/grub /usr/share/bash-completion/completions
+cp -av dest/usr/bin/grub-mount /usr/bin
+cd /sources
+
+# Efivar
+tar -xvzf efivar*.tar.gz && cd efivar*/
+make && make install LIBDIR=/usr/lib 
+cd /sources
+
+# Popt
+tar -xvzf popt*.tar.gz && cd popt*/
+./configure --prefix=/usr --disable-static &&
+make && make install
+cd /sources
+
+# Efibootmgr
+tar -xvzf efibootmgr*.tar.gz && cd efibootmgr*/
+tar -xf ../freetype-doc-2.13.3.tar.xz --strip-components=2 -C docs
+make EFIDIR=LFS EFI_LOADER=grubx64.efi && make install EFIDIR=LFS
+cd /sources
+
+# Freetype2
+tar -xvJf freetype*.tar.xz && cd freetype*/
+sed -ri "s:.*(AUX_MODULES.*valid):\1:" modules.cfg &&
+
+sed -r "s:.*(#.*SUBPIXEL_RENDERING) .*:\1:" \
+    -i include/freetype/config/ftoption.h  &&
+
+./configure --prefix=/usr --enable-freetype-config --disable-static &&
+make && make install
+cp -v -R docs -T /usr/share/doc/freetype-2.13.3 &&
+rm -v /usr/share/doc/freetype-2.13.3/freetype-config.1
+cd /sources
+
+# Dosfstools
+tar -xvzf dosfstools*.tar.gz && cd dosfstools*/
+./configure --prefix=/usr            \
+            --enable-compat-symlinks \
+            --mandir=/usr/share/man  \
+            --docdir=/usr/share/doc/dosfstools-4.2 &&
+make && make install
+
+grub-install --target=x86_64-efi --removable
+mountpoint /sys/firmware/efi/efivars || mount -v -t efivarfs efivarfs /sys/firmware/efi/efivars
+
+cat >> /etc/fstab << "FSTAB"
+efivarfs /sys/firmware/efi/efivars efivarfs defaults 0 0
+FSTAB
+
+grub-install --bootloader-id=LFS --recheck
+efibootmgr | cut -f 1
+
+cat > /boot/grub/grub.cfg << "CFG"
+set default=0
+set timeout=5
+
+insmod part_gpt
+insmod ext2
+set root=(hd0,2)
+
+insmod efi_gop
+insmod efi_uga
+if loadfont /boot/grub/fonts/unicode.pf2; then
+  terminal_output gfxterm
+fi
+
+menuentry "GNU/Linux, Linux 6.10.5-lfs-12.2" {
+  linux   /boot/vmlinuz-6.10.5-lfs-12.2 root=/dev/sda2 ro
+}
+
+menuentry "Firmware Setup" {
+  fwsetup
+}
+CFG
+
+
+echo 12.2 > /etc/lfs-release
+
+cat > /etc/lsb-release << "LSBREL"
+DISTRIB_ID="LazyOS"
+DISTRIB_RELEASE="12.2"
+DISTRIB_CODENAME="NaomiTheFem"
+DISTRIB_DESCRIPTION="LazyOS"
+LSBREL
+
+cat > /etc/os-release << "OSREL"
+NAME="LazyOS"
+VERSION="12.2"
+ID=lfs
+PRETTY_NAME="LazyOS"
+VERSION_CODENAME="NaomiTheFem"
+HOME_URL="https://www.linuxfromscratch.org/lfs/"
+OSREL
+
 
 
 EOF
