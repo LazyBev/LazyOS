@@ -292,9 +292,6 @@ cp -v zone.tab zone1970.tab iso3166.tab $ZONEINFO
 zic -d $ZONEINFO -p America/New_York
 unset ZONEINFO
 
-tzselect
-echo -e "Copy/Remember the timezone selected for you"
-sleep 5
-echo -e "What is your timezone (Continent/City)" tmzn
+tmzn=$(tzselect)
 
 ln -sfv /usr/share/zoneinfo/$tmzn /etc/localtime
