@@ -179,11 +179,15 @@ echo 20 # Type for Linux filesystem
 echo w # Write the partition table
 } | fdisk "$disk"
 
+export bootP="/dev/${disk}${disk_prefix}1"
+export swapP="/dev/${disk}${disk_prefix}2"
+export rootP="/dev/${disk}${disk_prefix}3"
+
 read -p "Enter the file system type for the root partition (e.g., ext4): " fstype
 
-mkfs.vfat -F 32 "/dev/${disk}${disk_prefix}1" || { echo "Failed to format boot partition" && exit 1; }
-mkfs -v -t "$fstype" "/dev/${disk}${disk_prefix}3" || { echo "Failed to format root partition" && exit 1; }
-mkswap "/dev/${disk}${disk_prefix}2" || { echo "Failed to format swap partition" && exit 1; }
+mkfs.vfat -F 32 "$bootP" || { echo "Failed to format boot partition" && exit 1; }
+mkfs -v -t "$fstype" "$rootp" || { echo "Failed to format root partition" && exit 1; }
+mkswap "$swapP" || { echo "Failed to format swap partition" && exit 1; }
 
 if [[ "$LFS" == "/mnt/lfs" ]]; then
 	echo "Variable LFS is setup"
@@ -196,24 +200,24 @@ echo -e "Mounting disk..."
 sleep 2
 
 mkdir -pv "$LFS"
-mount -v -t ext4 "/dev/${disk}${disk_prefix}3" "$LFS"
-mount --mkdir "/dev/${disk}${disk_prefix}1" /mnt/boot
-swapon -v "/dev/${disk}${disk_prefix}2" || { echo "Failed to enable swap partition" && exit 1; }
+mount -v -t ext4 "$rootp" "$LFS"
+mount --mkdir "$bootP" /mnt/boot
+swapon -v "$swapP" || { echo "Failed to enable swap partition" && exit 1; }
 
 echo -e "Adding entry to /etc/fstab"
 sleep 2
 
 # Get the UUID of the partition
-UUID=$(sudo blkid "/dev/${disk}${disk_prefix}3" | awk -F' ' '/UUID=/{for(i=1;i<=NF;i++) if($i ~ /^UUID=/) print substr($i, 7, length($i)-7)}')
+UUID=$(sudo blkid"$rootp" | awk -F' ' '/UUID=/{for(i=1;i<=NF;i++) if($i ~ /^UUID=/) print substr($i, 7, length($i)-7)}')
 
 # Check if UUID was found
 if [ -z "$UUID" ]; then
-	echo "Error: UUID not found for /dev/${disk}${disk_prefix}3"
+	echo "Error: UUID not found for $rootp"
 	exit 1
 fi
 
 # Add entry to /etc/fstab
-echo -e "\n# /dev/${disk}${disk_prefix}3\nUUID=$UUID /mnt/lfs  $fstype  defaults  1  1" | sudo tee -a /etc/fstab
+echo -e "\n# $rootp\nUUID=$UUID /mnt/lfs  $fstype  defaults  1  1" | sudo tee -a /etc/fstab
 
 echo -e "Setting up base system..."
 sleep 2
