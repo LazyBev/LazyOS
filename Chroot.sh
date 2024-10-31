@@ -293,7 +293,8 @@ zic -d $ZONEINFO -p America/New_York
 unset ZONEINFO
 
 tzselect
+echo -e "Copy/Remember the timezone selected for you"
+sleep 5
+echo -e "What is your timezone (Continent/City)" tmzn
 
-echo -e "What is your timezone (Continent/City)"
-
-ln -sfv /usr/share/zoneinfo/<xxx> /etc/localtime
+ln -sfv /usr/share/zoneinfo/$tmzn /etc/localtime
