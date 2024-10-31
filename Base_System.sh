@@ -702,6 +702,7 @@ exit $value
 TEST
 make install
 exec /usr/bin/bash --login
+cd /sources
 
 # Libtool
 tar -xvJf libtool*.tar.xz && cd libtool*/
@@ -709,6 +710,16 @@ tar -xvJf libtool*.tar.xz && cd libtool*/
 make -j$(nproc) && make -k check
 make install
 rm -fv /usr/lib/libltdl.a
+cd /sources
+
+# Gdbm
+tar -xvzf gdbm*.tar.gz && cd gdbm*/
+./configure --prefix=/usr    \
+            --disable-static \
+            --enable-libgdbm-compat
+make -j$(nproc) && make -k check
+make install
+cd /sources
 
 
 
