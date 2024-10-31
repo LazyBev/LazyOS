@@ -764,7 +764,7 @@ make install
 cd /sources
 
 # Perl
-tar -xvJf perl*.tar.gz && cd perl*/
+tar -xvJf perl*.tar.zz && cd perl*/
 export BUILD_ZLIB=False
 export BUILD_BZIP2=0
 sh Configure -des                                          \
@@ -786,6 +786,52 @@ TEST_JOBS=$(nproc) make test_harness
 make install
 unset BUILD_ZLIB BUILD_BZIP2
 cd /sources
+
+# Xml-Parser
+tar -xvzf XML-Parser*.tar.gz && cd XML-Parser*/
+perl Makefile.PL
+make -j$(nproc) && make test
+make install
+cd /sources
+
+# Intltool
+tar -xvzf intltool*.tar.gz && cd intltool*/
+sed -i 's:\\\${:\\\$\\{:' intltool-update.in
+./configure --prefix=/usr
+make -j$(nproc) && make check
+make install
+install -v -Dm644 doc/I18N-HOWTO /usr/share/doc/intltool-0.51.0/I18N-HOWTO
+cd /sources
+
+# Autoconf
+tar -xvJf autoconf*.tar.xz && cd autoconf*/
+./configure --prefix=/usr
+make -j$(nproc) && make check
+make install
+cd /sources
+
+# Automake
+tar -xvJf automake*.tar.xz && cd automake*/
+./configure --prefix=/usr --docdir=/usr/share/doc/automake-1.17
+make -j$(nproc) && make -j$(($(nproc)>4?$(nproc):4)) check
+make install
+cd /sources
+
+# Openssl
+tar -xvzf openssl*.tar.gz && cd openssl*/
+./config --prefix=/usr         \
+         --openssldir=/etc/ssl \
+         --libdir=lib          \
+         shared                \
+         zlib-dynamic
+make -j$(nproc) && HARNESS_JOBS=$(nproc) make test
+sed -i '/INSTALL_LIBS/s/libcrypto.a libssl.a//' Makefile
+make MANSUFFIX=ssl install
+mv -v /usr/share/doc/openssl /usr/share/doc/openssl-3.3.1
+cp -vfr doc/* /usr/share/doc/openssl-3.3.1
+cd /sources
+
+
 
 
 
