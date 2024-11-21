@@ -28,6 +28,10 @@ else
 	mount -vt tmpfs -o nosuid,nodev tmpfs $LFS/dev/shm
 fi
 
+wget https://github.com/bedrocklinux/bedrocklinux-userland/releases/download/0.7.30/bedrock-linux-0.7.30-x86_64.sh
+
+mv ./bedrock* $LFS
+
 chroot "$LFS" /usr/bin/env -i HOME=/root TERM="$TERM" PS1='(lfs chroot) \u:\w\$ ' \
     PATH=/usr/bin:/usr/sbin MAKEFLAGS="-j$(nproc)" TESTSUITEFLAGS="-j$(nproc)" /bin/bash --login <<EOF
 set -e
@@ -1661,11 +1665,19 @@ tar -xvzf wget*.tar.gz && cd wget*/
             --sysconfdir=/etc  \
             --with-ssl=openssl &&
 make && make install
-cd /sources
+cd /
 
-# I CANT FINISH THIS RAHHH
-# if [[ head -n7 /proc/cpuinfo | grep -i 'AMD' ]]; then
-# else
-# fi
-     
+sh ./bedrock-linux* --hijack
+
 EOF
+
+umount -v $LFS/dev/pts
+mountpoint -q $LFS/dev/shm && umount -v $LFS/dev/shm
+umount -v $LFS/dev
+umount -v $LFS/run
+umount -v $LFS/proc
+umount -v $LFS/sys
+umount -v $LFS/home
+umount -v $LFS
+
+reboot
