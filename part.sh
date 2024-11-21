@@ -259,4 +259,4 @@ case $(uname -m) in
 	x86_64) chown -v lfs $LFS/lib64 ;;
 esac
 
-su - lfs -c "cd /home/lazybev/LazyOS && chmod +x ./Setup.sh && ./Setup.sh"
+su - lfs -c "cd /home/lazybev/LazyOS && chmod +x ./part2.sh && ./part2.sh"
