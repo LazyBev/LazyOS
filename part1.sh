@@ -142,52 +142,25 @@ else
     disk_prefix=""
 fi
 
-# Get partition sizes from user input
-read -p "Enter the size for the boot partition (e.g., +512M): " boot_size
-read -p "Enter the size for the swap partition (e.g., +4G): " swap_size
-read -p "Enter the size for the root partition (e.g., +30G): " root_size
+# Wipe the disk and partition
+echo "Wiping $disk and creating partitions..."
+wipefs -af "$disk"
 
-echo -e "Partitioning disk..."
-sleep 2
+disk_size=$(lsblk -b -n -d -o SIZE "$disk" | awk '{print int($1 / 1024 / 1024)}')
+boot_size=1024
+root_size=$((disk_size - boot_size))
 
-# Partition the disk
-{
-echo o # Create a new empty GPT partition table
-echo n # New partition for boot
-echo p # Primary
-echo 1 # Partition number
-echo   # First sector (Accept default: will start at the beginning of the disk)
-echo +"$boot_size" # Size of the boot partition
-echo t # Set the type for this partition
-echo 1 # Type for EFI System (EFI boot partition)
-echo n # New partition for root
-echo p # Primary
-echo 2 # Partition number
-echo   # First sector (Accept default)
-echo +"$swap_size" # Size of the root partition
-echo t # Set the type for this partition
-echo 2 # Select the swap partition
-echo 19 # Type for Linux swap
-echo n # New partition for swap or additional partitions if required
-echo p # Primary
-echo 3 # Partition number
-echo   # First sector (Accept default)
-echo +"$root_size" # Size of the root partition
-echo t # Set the type for this partition
-echo 3 # Select the root partition
-echo 20 # Type for Linux filesystem
-echo w # Write the partition table
-} | fdisk "$disk"
+echo "Auto-partitioning: /boot=${boot_size}MiB, /root=${root_size}MiB"
+parted "$disk" mklabel gpt
+parted "$disk" mkpart primary fat32 1MiB "${boot_size}MiB"
+parted "$disk" set 1 boot on
+parted "$disk" mkpart primary ext4 "$((boot_size))MiB" "$((disk_size - boot_size))MiB"
 
 export bootP="/dev/${disk}${disk_prefix}1"
-export swapP="/dev/${disk}${disk_prefix}2"
-export rootP="/dev/${disk}${disk_prefix}3"
-
-read -p "Enter the file system type for the root partition (e.g., ext4): " fstype
+export rootP="/dev/${disk}${disk_prefix}2"
 
 mkfs.vfat -F 32 "$bootP" || { echo "Failed to format boot partition" && exit 1; }
-mkfs -v -t "$fstype" "$rootp" || { echo "Failed to format root partition" && exit 1; }
-mkswap "$swapP" || { echo "Failed to format swap partition" && exit 1; }
+mkfs.ext4 "$rootp" || { echo "Failed to format root partition" && exit 1; }
 
 if [[ "$LFS" == "/mnt/lfs" ]]; then
 	echo "Variable LFS is setup"
