@@ -232,6 +232,4 @@ case $(uname -m) in
 	x86_64) chown -v lfs $LFS/lib64 ;;
 esac
 
-wget https://github.com/bedrocklinux/bedrocklinux-userland/releases/download/0.7.30/bedrock-linux-0.7.30-x86_64.sh
-
 su - lfs -c "cd /home/lazybev/LazyOS && chmod +x ./part2.sh && ./part2.sh"
