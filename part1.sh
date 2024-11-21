@@ -356,4 +356,4 @@ ln -sv gcc $LFS/usr/bin/cc
 rm -rf build
 cd $LFS_SRC
 
-su - root -c "cd /home/lazybev/LazyOS && chmod +x ./Base_System.sh.sh && ./Base_System.sh.sh"
+su - root -c "cd /home/lazybev/LazyOS && chmod +x ./part2.sh && ./part2.sh"
