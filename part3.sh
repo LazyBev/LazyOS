@@ -1667,7 +1667,61 @@ tar -xvzf wget*.tar.gz && cd wget*/
 make && make install
 cd /
 
-sh ./bedrock-linux* --hijack
+sh ./bedrock-linux* --hijack 
+
+# Check if Bedrock's `brl` is available
+if ! command -v brl &>/dev/null; then
+  echo "Bedrock's brl command not found. Please ensure Bedrock is installed." >&2
+  exit 1
+fi
+
+# Check if an Arch stratum exists
+if ! brl list | grep -q arch; then
+  echo "No Arch Linux stratum found. Adding Arch Linux stratum..."
+  brl fetch arch || { echo "Failed to add Arch Linux stratum."; exit 1; }
+fi
+
+# Ensure pacman is available
+if ! command -v pacman &>/dev/null; then
+  echo "Pacman is not available. Ensure your Arch Linux stratum is working properly." >&2
+  exit 1
+fi
+
+# Update package database
+echo "Updating pacman package database..."
+pacman -Sy || { echo "Failed to update pacman package database."; exit 1; }
+
+# Determine CPU type and install appropriate microcode
+CPU_VENDOR=$(grep -m 1 "vendor_id" /proc/cpuinfo | awk '{print $3}')
+case $CPU_VENDOR in
+  GenuineIntel)
+    echo "Intel CPU detected. Installing intel-ucode..."
+    pacman -S --noconfirm intel-ucode || { echo "Failed to install intel-ucode."; exit 1; }
+    MICROCODE_PATH="/boot/intel-ucode.img"
+    ;;
+  AuthenticAMD)
+    echo "AMD CPU detected. Installing amd-ucode..."
+    pacman -S --noconfirm amd-ucode || { echo "Failed to install amd-ucode."; exit 1; }
+    MICROCODE_PATH="/boot/amd-ucode.img"
+    ;;
+  *)
+    echo "Unknown CPU vendor: $CPU_VENDOR. Exiting." >&2
+    exit 1
+    ;;
+esac
+
+# Update GRUB configuration
+if [[ -f /etc/default/grub ]]; then
+  echo "Updating GRUB configuration..."
+  GRUB_CMDLINE=$(grep "^GRUB_CMDLINE_LINUX" /etc/default/grub)
+  if ! echo "$GRUB_CMDLINE" | grep -q "$MICROCODE_PATH"; then
+    sed -i "/^GRUB_CMDLINE_LINUX/s|\"$| ${MICROCODE_PATH}\"|" /etc/default/grub
+  fi
+  grub-mkconfig -o /boot/grub/grub.cfg || { echo "Failed to update GRUB configuration."; exit 1; }
+else
+  echo "/etc/default/grub not found. Please configure your bootloader manually to include $MICROCODE_PATH."
+  exit 1
+fi
 
 EOF
 
