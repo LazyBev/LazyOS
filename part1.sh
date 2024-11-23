@@ -85,19 +85,19 @@ ver_check Xz             xz       5.0.0
 ver_kernel 4.19
 
 if mount | grep -q 'devpts on /dev/pts' && [ -e /dev/ptmx ]; then 
-	echo "OK:    Linux Kernel supports UNIX 98 PTY";
+    echo "OK:    Linux Kernel supports UNIX 98 PTY";
 else 
-	echo "ERROR: Linux Kernel does NOT support UNIX 98 PTY"; 
-	errors_occurred=1
+    echo "ERROR: Linux Kernel does NOT support UNIX 98 PTY"; 
+    errors_occurred=1
 fi
 
 alias_check() {
-	if "$1" --version 2>&1 | grep -qi "$2"; then 
+    if "$1" --version 2>&1 | grep -qi "$2"; then 
     	printf "OK:    %-4s is $2\n" "$1";
-	else 
+    else 
     	printf "ERROR: %-4s is NOT $2\n" "$1"; 
     	errors_occurred=1
-	fi
+    fi
 }
 
 echo "Aliases:"
@@ -107,18 +107,18 @@ alias_check sh Bash
 
 echo "Compiler check:"
 if printf "int main(){}" | g++ -x c++ -; then 
-	echo "OK:    g++ works";
+    echo "OK:    g++ works";
 else 
-	echo "ERROR: g++ does NOT work"; 
-	errors_occurred=1
+    echo "ERROR: g++ does NOT work"; 
+    errors_occurred=1
 fi
 rm -f a.out
 
 if [ "$(nproc)" = "" ]; then
-	echo "ERROR: nproc is not available or it produces empty output"; 
-	errors_occurred=1
+    echo "ERROR: nproc is not available or it produces empty output"; 
+    errors_occurred=1
 else
-	echo "OK: nproc reports $(nproc) logical cores are available"
+    echo "OK: nproc reports $(nproc) logical cores are available"
 fi
 
 echo -e "Checking if requirements meet on your host OS..."
@@ -126,8 +126,8 @@ sleep 2
 
 # Exit with status based on errors encountered
 if [ $errors_occurred -ne 0 ]; then
-	echo "Host OS does nto meet requirements to start installation"
-	exit 1
+    echo "Host OS does nto meet requirements to start installation"
+    exit 1
 fi
 
 sudo pacman -S arch-install-scripts
@@ -163,7 +163,7 @@ mkfs.vfat -F 32 "$bootP" || { echo "Failed to format boot partition" && exit 1; 
 mkfs.ext4 "$rootp" || { echo "Failed to format root partition" && exit 1; }
 
 if [[ "$LFS" == "/mnt/lfs" ]]; then
-	echo "Variable LFS is setup"
+    echo "Variable LFS is setup"
 else
     echo "Error: LFS is not set to /mnt/lfs, it is set to $LFS"
     exit 1
@@ -185,8 +185,8 @@ UUID=$(sudo blkid"$rootp" | awk -F' ' '/UUID=/{for(i=1;i<=NF;i++) if($i ~ /^UUID
 
 # Check if UUID was found
 if [ -z "$UUID" ]; then
-	echo "Error: UUID not found for $rootp"
-	exit 1
+    echo "Error: UUID not found for $rootp"
+    exit 1
 fi
 
 # Add entry to /etc/fstab
@@ -212,11 +212,11 @@ popd
 mkdir -pv $LFS/{etc,var} $LFS/usr/{bin,lib,sbin}
 
 for i in bin lib sbin; do
-	ln -sv usr/$i $LFS/$i
+    ln -sv usr/$i $LFS/$i
 done
 
 case $(uname -m) in
-	x86_64) mkdir -pv $LFS/lib64 ;;
+    x86_64) mkdir -pv $LFS/lib64 ;;
 esac
 
 mkdir -pv $LFS/tools
@@ -229,7 +229,7 @@ passwd lfs
 
 chown -v lfs $LFS/{usr{,/*},lib,var,etc,bin,sbin,tools}
 case $(uname -m) in
-	x86_64) chown -v lfs $LFS/lib64 ;;
+    x86_64) chown -v lfs $LFS/lib64 ;;
 esac
 
 su - lfs -c "cd /home/lazybev/LazyOS && chmod +x ./part2.sh && ./part2.sh"
