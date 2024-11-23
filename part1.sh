@@ -16,9 +16,9 @@ export LC_ALL=C
 export PATH=/usr/bin:/bin
 
 if [ "$(whoami)" = "root" ]; then
-    :
+    echo "Running as root..."
 else
-    echo "Please run this as root"
+    echo "Please run this as root..."
     exit 1 &>/dev/null
 fi
 
@@ -33,32 +33,32 @@ sed '' /dev/null || { bail "sed does not work"; errors_occurred=1; }
 sort /dev/null || { bail "sort does not work"; errors_occurred=1; }
 
 ver_check() {
-	if ! type -p "$2" &>/dev/null; then 
+    if ! type -p "$2" &>/dev/null; then 
     	echo "ERROR: Cannot find $2 ($1)"; 
     	errors_occurred=1
-     return 1; 
-	fi
-	v=$("$2" --version 2>&1 | grep -E -o '[0-9]+\.[0-9\.]+[a-z]*' | head -n1)
-	if printf '%s\n' "$3" "$v" | sort --version-sort --check &>/dev/null; then 
+     	return 1; 
+    fi
+    v=$("$2" --version 2>&1 | grep -E -o '[0-9]+\.[0-9\.]+[a-z]*' | head -n1)
+    if printf '%s\n' "$3" "$v" | sort --version-sort --check &>/dev/null; then 
     	printf "OK:    %-9s %-6s >= $3\n" "$1" "$v"; 
     	return 0;
-	else 
+    else 
     	printf "ERROR: %-9s is TOO OLD ($3 or later required)\n" "$1"; 
      	errors_occurred=1
      	return 1; 
-   	fi
+    fi
 }
 
 ver_kernel() {
-   	kver=$(uname -r | grep -E -o '^[0-9\.]+')
-   	if printf '%s\n' "$1" "$kver" | sort --version-sort --check &>/dev/null; then 
+    kver=$(uname -r | grep -E -o '^[0-9\.]+')
+    if printf '%s\n' "$1" "$kver" | sort --version-sort --check &>/dev/null; then 
      	printf "OK:    Linux Kernel $kver >= $1\n"; 
      	return 0;
-   	else 
+    else 
      	printf "ERROR: Linux Kernel ($kver) is TOO OLD ($1 or later required)\n"; 
      	errors_occurred=1
      	return 1; 
-   	fi
+    fi
 }
 
 # Coreutils first because --version-sort needs Coreutils >= 7.0
