@@ -1459,13 +1459,16 @@ if [[ "$disk" == /dev/nvme* ]]; then
     sed -i '/^CONFIG_BLK_DEV_NVME/d' .config
     echo "CONFIG_BLK_DEV_NVME=y" >> .config
 fi
-# Add DRM configurations
-for DRM in CONFIG_DRM_NOUVEAU=y CONFIG_DRM_AMDGPU=y CONFIG_DRM_I915=y; do
-    sed -i "/^${DRM%=*}/d" .config
-    echo "$DRM" >> .config
-done
-# Add static configurations
 static_configs=(
+    "CONFIG_DRM_I915=m"
+    "CONFIG_DRM_RADEON=m"
+    "CONFIG_DRM_AMDGPU=m"
+    "CONFIG_DRM_AMDGPU_SI=y"
+    "CONFIG_DRM_AMDGPU_CIK=y"
+    "CONFIG_DRM_AMDG_DC=y"
+    "CONFIG_DRM_VGEM=m"
+    "CONFIG_DRM_VMWGFX=m"
+    "ONFIG_DRM_NOUVEAU=y"
     "CONFIG_FUSE_FS=y"
     "CONFIG_PSI=y"
     "CONFIG_MEMCG=y"
@@ -1702,33 +1705,6 @@ mkdir -p /var/lib/dkms
 
 export KERNELDIR=/usr/src/linux
 dkms autoinstall
-cd /sources
-
-# Drivers
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
-if ! command_exists lspci; then
-    echo "Error: 'lspci' is required but not installed. Please install pciutils first."
-    exit 1
-fi
-GPU_INFO=$(lspci | grep -i 'vga\|3d\|display')
-if [ -z "$GPU_INFO" ]; then
-    echo "No GPU detected. Ensure your PCI devices are accessible."
-    exit 1
-fi
-echo "Detected GPU:"
-echo "$GPU_INFO"
-echo ""
-echo "Open Source Drivers..."
-MESA_VERSION="23.1.0"  # Update to the latest stable version as needed
-wget https://archive.mesa3d.org/mesa-$MESA_VERSION.tar.xz
-tar -xf mesa-$MESA_VERSION.tar.xz && cd mesa-$MESA_VERSION
-mkdir build && cd build
-meson setup --prefix=/usr --buildtype=release -Dgallium-drivers=radeonsi,iris,swrast ..
-ninja && ninja install
-cd ../.. && rm -rf mesa-$MESA_VERSION mesa-$MESA_VERSION.tar.xz
-echo "Mesa installation complete."
 cd /sources
 
 # Audio
@@ -2122,6 +2098,44 @@ wget https://xcb.freedesktop.org/dist/xcb-util-0.4.1.tar.xz
 tar -xvJf xcb-util-0.4.1.tar.xz && cd xcb-util-0.4.1/
 ./configure $XORG_CONFIG &&
 make && make install
+cd /sources
+
+# Xcb-util-image
+wget https://xcb.freedesktop.org/dist/xcb-util-image-0.4.1.tar.xz
+tar -xvJf xcb-util-image-0.4.1.tar.xz && cd xcb-util-image-0.4.1
+./configure $XORG_CONFIG &&
+make && make install
+cd /sources
+
+# Xcb-util-keysyms
+wget https://xcb.freedesktop.org/dist/xcb-util-keysyms-0.4.1.tar.xz
+tar -xvJf xcb-util-keysyms-0.4.1.tar.xz && cd xcb-util-keysyms-0.4.1/
+./configure $XORG_CONFIG &&
+make && make install
+cd /sources
+
+# Xcb-util-renderutil
+wget https://xcb.freedesktop.org/dist/xcb-util-renderutil-0.3.10.tar.xz
+tar -xvJf xcb-util-renderutil-0.3.10.tar.xz && cd xcb-util-renderutil-0.3.10/
+./configure $XORG_CONFIG &&
+make && make install
+cd /sources
+
+# Xcb-util-wm
+wget https://xcb.freedesktop.org/dist/xcb-util-wm-0.4.2.tar.xz
+tar -xvJf xcb-util-wm-0.4.2.tar.xz && cd xcb-util-wm-0.4.2/
+./configure $XORG_CONFIG &&
+make && make install
+cd /sources
+
+# Xcb-util-cursor
+wget https://xcb.freedesktop.org/dist/xcb-util-cursor-0.1.4.tar.xz
+tar -xvJf xcb-util-cursor-0.1.4.tar.xz && cd xcb-util-cursor-0.1.4
+./configure $XORG_CONFIG &&
+make && make install
+cd /sources
+
+#
 
 # Bedrocking
 read -p "Do you want to install bedrock linux? [y/N]: " bedrock_choice
