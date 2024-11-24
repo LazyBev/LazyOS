@@ -14,8 +14,7 @@ case $(uname -m) in
     x86_64) chown --from lfs -R root:root $LFS/lib64 ;;
 esac
 
-mkdir -pv $LFS/{dev,proc,sys,run}
-ls $LFS
+mkdir -pv $LFS/{dev,proc,sys,run} && ls $LFS
 mount -v --bind /dev $LFS/dev
 mount -vt devpts devpts -o gid=5,mode=0620 $LFS/dev/pts
 mount -vt proc proc $LFS/proc
@@ -1478,6 +1477,7 @@ static_configs=(
     "CONFIG_PARTITION_ADVANCED=y"
     "CONFIG_SYSFB_SIMPLEFB=y"
     "CONFIG_DRM_SIMPLEDRM=y"
+    "CONFIG_AUDIT=y"
 )
 for config in "${static_configs[@]}"; do
     sed -i "/^${config%=*}/d" .config
@@ -1695,13 +1695,13 @@ cd /sources
 
 # DKMS
 git clone https://github.com/dell/dkms.git
-cd dkms && sudo make install
+cd dkms && make install
 
-sudo mkdir -p /usr/src
-sudo mkdir -p /var/lib/dkms
+mkdir -p /usr/src
+mkdir -p /var/lib/dkms
 
 export KERNELDIR=/usr/src/linux
-sudo dkms autoinstall
+dkms autoinstall
 cd /sources
 
 # Drivers
@@ -1726,7 +1726,7 @@ wget https://archive.mesa3d.org/mesa-$MESA_VERSION.tar.xz
 tar -xf mesa-$MESA_VERSION.tar.xz && cd mesa-$MESA_VERSION
 mkdir build && cd build
 meson setup --prefix=/usr --buildtype=release -Dgallium-drivers=radeonsi,iris,swrast ..
-ninja && sudo ninja install
+ninja && ninja install
 cd ../.. && rm -rf mesa-$MESA_VERSION mesa-$MESA_VERSION.tar.xz
 echo "Mesa installation complete."
 cd /sources
@@ -1737,7 +1737,7 @@ PULSEAUDIO_DIR="/sources/pulseaudio-${PULSEAUDIO_VERSION}"
 
 # Install GLib
 wget http://ftp.acc.umu.se/pub/GNOME/sources/glib/2.70/glib-2.70.0.tar.xz
-tar -xf glib-2.70.0.tar.xz
+tar -xvJf glib-2.70.0.tar.xz
 cd glib-2.70.0
 ./configure --prefix=/usr
 make && make install
@@ -1745,7 +1745,7 @@ cd /sources
 
 # Install libxml2
 wget http://xmlsoft.org/sources/libxml2-2.9.10.tar.gz
-tar -xf libxml2-2.9.10.tar.gz
+tar --xvzf libxml2-2.9.10.tar.gz
 cd libxml2-2.9.10
 ./configure --prefix=/usr
 make && make install
@@ -1753,7 +1753,7 @@ cd /sources
 
 # Install dbus
 wget https://dbus.freedesktop.org/releases/dbus/dbus-1.12.16.tar.xz
-tar -xf dbus-1.12.16.tar.xz
+tar -xvJf dbus-1.12.16.tar.xz
 cd dbus-1.12.16
 ./configure --prefix=/usr
 make && make install
@@ -1761,7 +1761,7 @@ cd /sources
 
 # Install libsndfile
 wget http://www.mega-nerd.com/SRC/libsndfile-1.0.31.tar.gz
-tar -xf libsndfile-1.0.31.tar.gz
+tar -xvzf libsndfile-1.0.31.tar.gz
 cd libsndfile-1.0.31
 ./configure --prefix=/usr
 make && make install
@@ -1769,13 +1769,13 @@ cd /sources
 
 # Install libcap
 wget https://github.com/avinoam/libcap/releases/download/v2.56/libcap-2.56.tar.xz
-tar -xf libcap-2.56.tar.xz
+tar -xvJf libcap-2.56.tar.xz
 cd libcap-2.56
 make && make install
 cd /sources
 
 wget https://www.freedesktop.org/software/pulseaudio/releases/pulseaudio-${PULSEAUDIO_VERSION}.tar.xz
-tar -xf pulseaudio-${PULSEAUDIO_VERSION}.tar.xz
+tar -xvJf pulseaudio-${PULSEAUDIO_VERSION}.tar.xz
 cd pulseaudio-${PULSEAUDIO_VERSION}
 ./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var --disable-static --enable-shared
 make && make install
@@ -1838,22 +1838,302 @@ case "$1" in
 esac
 exit 0
 PA
-
 chmod +x /etc/init.d/pulseaudio
 ln -s /etc/init.d/pulseaudio /etc/rc.d/rc3.d/S99pulseaudio
 cd /sources
+
+# PAM
+wget https://github.com/linux-pam/linux-pam/releases/download/v1.6.1/Linux-PAM-1.6.1-docs.tar.xz
+wget https://github.com/linux-pam/linux-pam/releases/download/v1.6.1/Linux-PAM-1.6.1.tar.xz
+tar -xvJf Linux-PAM-1.6.1.tar.xz && cd Linux-PAM-1.6.1/
+sed -e /service_DATA/d \
+    -i modules/pam_namespace/Makefile.am
+autoreconf -fi
+tar -xvJf ../Linux-PAM-1.6.1-docs.tar.xz --strip-components=1
+./configure --prefix=/usr                        \
+            --sbindir=/usr/sbin                  \
+            --sysconfdir=/etc                    \
+            --libdir=/usr/lib                    \
+            --enable-securedir=/usr/lib/security \
+            --docdir=/usr/share/doc/Linux-PAM-1.6.1 &&
+make
+install -v -m755 -d /etc/pam.d &&
+
+cat > /etc/pam.d/other << "PAM"
+auth     required       pam_deny.so
+account  required       pam_deny.so
+password required       pam_deny.so
+session  required       pam_deny.so
+PAM
+rm -fv /etc/pam.d/other
+make install && chmod -v 4755 /usr/sbin/unix_chkpwd
+install -vdm755 /etc/pam.d &&
+cat > /etc/pam.d/system-account << "SYSACC" &&
+# Begin /etc/pam.d/system-account
+
+account   required    pam_unix.so
+
+# End /etc/pam.d/system-account
+SYSACC
+
+cat > /etc/pam.d/system-auth << "SYSAUTH" &&
+# Begin /etc/pam.d/system-auth
+
+auth      required    pam_unix.so
+
+# End /etc/pam.d/system-auth
+SYSAUTH
+
+cat > /etc/pam.d/system-session << "SYSSESH" &&
+# Begin /etc/pam.d/system-session
+
+session   required    pam_unix.so
+
+# End /etc/pam.d/system-session
+SYSSESH
+
+cat > /etc/pam.d/system-password << "SYSPASS"
+# Begin /etc/pam.d/system-password
+
+# use yescrypt hash for encryption, use shadow, and try to use any
+# previously defined authentication token (chosen password) set by any
+# prior module.
+password  required    pam_unix.so       yescrypt shadow try_first_pass
+
+# End /etc/pam.d/system-password
+SYSPASS
+cd /sources
+
+# Sudo
+wget https://www.sudo.ws/dist/sudo-1.9.15p5.tar.gz
+tar -xvzf sudo-1.9.15p5.tar.gz && cd sudo-1.9.15p5/
+./configure --prefix=/usr              \
+            --libexecdir=/usr/lib      \
+            --with-secure-path         \
+            --with-env-editor          \
+            --docdir=/usr/share/doc/sudo-1.9.15p5 \
+            --with-passprompt="[sudo] password for %p: " &&
+make && make install
+cat > /etc/sudoers.d/00-sudo << "SUDO"
+Defaults secure_path="/usr/sbin:/usr/bin"
+%wheel ALL=(ALL) ALL
+SUDO
+
+cat > /etc/pam.d/sudo << "PSUDO"
+# Begin /etc/pam.d/sudo
+
+# include the default auth settings
+auth      include     system-auth
+
+# include the default account settings
+account   include     system-account
+
+# Set default environment variables for the service user
+session   required    pam_env.so
+
+# include system session defaults
+session   include     system-session
+
+# End /etc/pam.d/sudo
+PSUDO
+chmod 644 /etc/pam.d/sudo
+cd /sources
+
+# Xorg
+export XORG_PREFIX="/usr"
+cat > /etc/profile.d/xorg.sh << XORG
+XORG_PREFIX="$XORG_PREFIX"
+XORG_CONFIG="--prefix=\$XORG_PREFIX --sysconfdir=/etc --localstatedir=/var --disable-static"
+export XORG_PREFIX XORG_CONFIG XORG
+chmod 644 /etc/profile.d/xorg.sh
+cat > /etc/sudoers.d/xorg << SXORG
+Defaults env_keep += XORG_PREFIX
+Defaults env_keep += XORG_CONFIG
+SXORG
+cd /sources
+
+# Util-macros
+wget https://www.x.org/pub/individual/util/util-macros-1.20.1.tar.xz
+tar -xvJf util-macros-1.20.1.tar.xz && cd util-macros-1.20.1/
+./configure $XORG_CONFIG && make install
+cd /sources
+
+# Xorgproto
+wget https://xorg.freedesktop.org/archive/individual/proto/xorgproto-2024.1.tar.xz
+tar -xvJf xorgproto-2024.1.tar.xz && cd xorgproto-2024.1/
+mkdir build && cd build
+meson setup --prefix=$XORG_PREFIX .. && ninja
+ninja install && mv -v $XORG_PREFIX/share/doc/xorgproto{,-2024.1}
+cd /sources
+
+# LibXau
+wget https://www.x.org/pub/individual/lib/libXau-1.0.11.tar.xz
+tar -xvJf libXau-1.0.11.tar.xz && cd libXau-1.0.11/
+./configure $XORG_CONFIG &&
+make && make install
+cd /sources
+
+# libXdmcp
+wget https://www.x.org/pub/individual/lib/libXdmcp-1.1.5.tar.xz
+tar -xvJf libXdmcp-1.1.5.tar.xz && cd libXdcmp-1.1.5/
+./configure $XORG_CONFIG --docdir=/usr/share/doc/libXdmcp-1.1.5 &&
+make && make install
+cd /sources
+
+# Xcb-proto
+wget https://xorg.freedesktop.org/archive/individual/proto/xcb-proto-1.17.0.tar.xz
+tar -xvJf xcb-proto-1.17.0.tar.xz && cd xcb-proto-1.17.0/
+PYTHON=python3 ./configure $XORG_CONFIG && make install
+cd /sources
+
+# Libxcb 
+wget https://xorg.freedesktop.org/archive/individual/lib/libxcb-1.17.0.tar.xz
+tar -xvJf libxcb-1.17.0.tar.xz && cd libxcb-1.17.0/
+./configure $XORG_CONFIG      \
+            --without-doxygen \
+            --docdir='${datadir}'/doc/libxcb-1.17.0 &&
+LC_ALL=en_US.UTF-8 make
+make install
+cd /sources
+
+# Fontconfig
+wget https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.15.0.tar.xz
+tar -xvJf fontconfig-2.15.0.tar.xz && cd fontconfig-2.15.0/
+./configure --prefix=/usr        \
+            --sysconfdir=/etc    \
+            --localstatedir=/var \
+            --disable-docs       \
+            --docdir=/usr/share/doc/fontconfig-2.15.0 &&
+make && make install
+install -v -dm755 \
+        /usr/share/{man/man{1,3,5},doc/fontconfig-2.15.0/fontconfig-devel} &&
+install -v -m644 fc-*/*.1         /usr/share/man/man1 &&
+install -v -m644 doc/*.3          /usr/share/man/man3 &&
+install -v -m644 doc/fonts-conf.5 /usr/share/man/man5 &&
+install -v -m644 doc/fontconfig-devel/* \
+                                  /usr/share/doc/fontconfig-2.15.0/fontconfig-devel &&
+install -v -m644 doc/*.{pdf,sgml,txt,html} \
+                                  /usr/share/doc/fontconfig-2.15.0
+cd /sources
+
+# Xorg libs
+cat > lib-7.md5 << "MD5"
+12344cd74a1eb25436ca6e6a2cf93097  xtrans-1.5.0.tar.xz
+5b8fa54e0ef94136b56f887a5e6cf6c9  libX11-1.8.10.tar.xz
+e59476db179e48c1fb4487c12d0105d1  libXext-1.3.6.tar.xz
+c5cc0942ed39c49b8fcd47a427bd4305  libFS-1.0.10.tar.xz
+b444a0e4c2163d1bbc7b046c3653eb8d  libICE-1.1.1.tar.xz
+ffa434ed96ccae45533b3d653300730e  libSM-1.2.4.tar.xz
+e613751d38e13aa0d0fd8e0149cec057  libXScrnSaver-1.2.4.tar.xz
+4ea21d3b5a36d93a2177d9abed2e54d4  libXt-1.3.0.tar.xz
+85edefb7deaad4590a03fccba517669f  libXmu-1.2.1.tar.xz
+05b5667aadd476d77e9b5ba1a1de213e  libXpm-3.5.17.tar.xz
+2a9793533224f92ddad256492265dd82  libXaw-1.0.16.tar.xz
+65b9ba1e9ff3d16c4fa72915d4bb585a  libXfixes-6.0.1.tar.xz
+af0a5f0abb5b55f8411cd738cf0e5259  libXcomposite-0.4.6.tar.xz
+ebf7fb3241ec03e8a3b2af72f03b4631  libXrender-0.9.11.tar.xz
+bf3a43ad8cb91a258b48f19c83af8790  libXcursor-1.2.2.tar.xz
+ca55d29fa0a8b5c4a89f609a7952ebf8  libXdamage-1.1.6.tar.xz
+8816cc44d06ebe42e85950b368185826  libfontenc-1.1.8.tar.xz
+66e03e3405d923dfaf319d6f2b47e3da  libXfont2-2.0.7.tar.xz
+cea0a3304e47a841c90fbeeeb55329ee  libXft-2.3.8.tar.xz
+89ac74ad6829c08d5c8ae8f48d363b06  libXi-1.8.1.tar.xz
+228c877558c265d2f63c56a03f7d3f21  libXinerama-1.1.5.tar.xz
+24e0b72abe16efce9bf10579beaffc27  libXrandr-1.5.4.tar.xz
+66c9e9e01b0b53052bb1d02ebf8d7040  libXres-1.2.2.tar.xz
+b62dc44d8e63a67bb10230d54c44dcb7  libXtst-1.2.5.tar.xz
+70bfdd14ca1a563c218794413f0c1f42  libXv-1.0.12.tar.xz
+a90a5f01102dc445c7decbbd9ef77608  libXvMC-1.0.14.tar.xz
+74d1acf93b83abeb0954824da0ec400b  libXxf86dga-1.1.6.tar.xz
+5b913dac587f2de17a02e17f9a44a75f  libXxf86vm-1.1.5.tar.xz
+57c7efbeceedefde006123a77a7bc825  libpciaccess-0.18.1.tar.xz
+229708c15c9937b6e5131d0413474139  libxkbfile-1.1.3.tar.xz
+faa74f7483074ce7d4349e6bdc237497  libxshmfence-1.3.2.tar.xz
+bdd3ec17c6181fd7b26f6775886c730d  libXpresent-1.0.1.tar.xz
+MD5
+mkdir lib &&
+cd lib &&
+grep -v '^#' ../lib-7.md5 | awk '{print $2}' | wget -i- -c \
+    -B https://www.x.org/pub/individual/lib/ &&
+md5sum -c ../lib-7.md5
+as_root()
+{
+  if   [ $EUID = 0 ];        then $*
+  elif [ -x /usr/bin/sudo ]; then sudo $*
+  else                            su -c \\"$*\\"
+  fi
+}
+export -f as_root
+bash -e && for package in $(grep -v '^#' ../lib-7.md5 | awk '{print $2}')
+do
+    packagedir=${package%.tar.?z*}
+    echo "Building $packagedir"
+
+    tar -xvf $package
+    pushd $packagedir
+    docdir="--docdir=$XORG_PREFIX/share/doc/$packagedir"
+  
+    case $packagedir in
+        libXfont2-[0-9]* )
+            ./configure $XORG_CONFIG $docdir --disable-devel-docs
+            ;;
+        libXt-[0-9]* )
+            ./configure $XORG_CONFIG $docdir --with-appdefaultdir=/etc/X11/app-defaults
+            ;;
+
+        libXpm-[0-9]* )
+            ./configure $XORG_CONFIG $docdir --disable-open-zfile
+            ;;
+  
+        libpciaccess* )
+            mkdir build
+            cd build
+            meson setup --prefix=$XORG_PREFIX --buildtype=release ..
+            ninja
+            as_root ninja install
+            popd     # $packagedir
+            continue # for loop
+            ;;
+	* )
+           ./configure $XORG_CONFIG $docdir
+           ;;
+    esac
+
+    make
+    #make check 2>&1 | tee ../$packagedir-make_check.log
+    as_root make install
+    popd
+    rm -rf $packagedir
+    as_root /sbin/ldconfig
+done
+exit
+cd /sources
+
+# Libxcvt
+wget https://www.x.org/pub/individual/lib/libxcvt-0.1.2.tar.xz
+tar -xvJf libxcvt-0.1.2.tar.xz && cd libxcvt-0.1.2
+mkdir build && cd build
+meson setup --prefix=$XORG_PREFIX --buildtype=release .. &&
+ninja && ninja install
+cd /sources
+
+# Xcb-util
+wget https://xcb.freedesktop.org/dist/xcb-util-0.4.1.tar.xz
+tar -xvJf xcb-util-0.4.1.tar.xz && cd xcb-util-0.4.1/
+./configure $XORG_CONFIG &&
+make && make install
 
 # Bedrocking
 read -p "Do you want to install bedrock linux? [y/N]: " bedrock_choice
 if [[ "$bedrock_choice" == "y" ]]; then
     wget https://github.com/libfuse/libfuse/releases/download/fuse-3.16.2/fuse-3.16.2.tar.gz
-    tar -xvf fuse-3.16.2.tar.xz && cd fuse*/
+    tar -xvJf fuse-3.16.2.tar.xz && cd fuse*/
     mkdir build && cd build
     meson setup
     cd /sources
 
     wget https://gnupg.org/ftp/gcrypt/gnupg/gnupg-2.4.6.tar.bz2
-    tar -xvf gnupg-2.4.6.tar.bz2 && cd gnupg-2.4.6
+    tar -xvJf gnupg-2.4.6.tar.bz2 && cd gnupg-2.4.6
     ./configure --prefix=/usr --sysconfdir=/etc
     make && make install
     gpg --full-generate-key
@@ -1918,6 +2198,8 @@ else
     echo "/etc/default/grub not found. Please configure your bootloader manually to include $MICROCODE_PATH."
     exit 1
 fi
+
+
 
 EOF
 
