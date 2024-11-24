@@ -28,10 +28,6 @@ else
 	mount -vt tmpfs -o nosuid,nodev tmpfs $LFS/dev/shm
 fi
 
-wget https://github.com/bedrocklinux/bedrocklinux-userland/releases/download/0.7.30/bedrock-linux-0.7.30-x86_64.sh
-
-mv ./bedrock* $LFS
-
 chroot "$LFS" /usr/bin/env -i HOME=/root TERM="$TERM" PS1='(lfs chroot) \u:\w\$ ' \
     PATH=/usr/bin:/usr/sbin MAKEFLAGS="-j$(nproc)" TESTSUITEFLAGS="-j$(nproc)" /bin/bash --login <<EOF
 set -e
@@ -1434,13 +1430,11 @@ export bootP="/dev/${disk}${disk_prefix}1"
 export swapP="/dev/${disk}${disk_prefix}2"
 export rootP="/dev/${disk}${disk_prefix}3"
 
-read -p "Re-enter the file system type for the root partition (e.g., ext4): " fstype
-
 cat > /etc/fstab << "FSTAB"
 # file system  mount-point    type     options             dump  fsck
 #                                                                order
 
-$rootP         /              $fstype  defaults            1     1
+$rootP         /              ext4     defaults            1     1
 $booP          /boot          vfat     noauto              1     2
 $swapP         swap           swap     pri=1               0     0
 proc           /proc          proc     nosuid,noexec,nodev 0     0
@@ -1461,22 +1455,33 @@ sed -i '/#/d' .config
 sed -i 's/CONFIG_DRM=y/CONFIG_DRM=m/' .config
 sed -i 's/CONFIG_NLS_CODEPAGE_437=y/CONFIG_NLS_CODEPAGE_437=m/' .config
 sed -i 's/CONFIG_NLS_ISO8859_1=y/CONFIG_NLS_ISO8859_1=m/' .config
-{
-	CONFIG_PSI=y
-	CONFIG_MEMCG=y
-	CONFIG_DRM_FBDEV_EMULATION=y
-	CONFIG_FRAMEBUFFER_CONSOLE=y
- 	CONFIG_IRQ_REMAP=y
-  	CONFIG_X86_X2APIC=y
-   	CONFIG_HIGHMEM64G=y
-	if [[ "$disk" = "/dev/nvme0n1" ]]; then
- 		CONFIG_BLK_DEV_NVME=y
-   	fi
-	CONFIG_PARTITION_ADVANCED=y
- 	CONFIG_SYSFB_SIMPLEFB=y
-  	CONFIG_DRM_SIMPLEDRM=y
-   	CONFIG_FRAMEBUFFER_CONSOLE=y
-} >> .config
+# Check if the disk is an NVMe device
+if [[ "$disk" == /dev/nvme* ]]; then
+    sed -i '/^CONFIG_BLK_DEV_NVME/d' .config
+    echo "CONFIG_BLK_DEV_NVME=y" >> .config
+fi
+# Add DRM configurations
+for DRM in CONFIG_DRM_NOUVEAU=y CONFIG_DRM_AMDGPU=y CONFIG_DRM_I915=y; do
+    sed -i "/^${DRM%=*}/d" .config
+    echo "$DRM" >> .config
+done
+# Add static configurations
+static_configs=(
+    "CONFIG_PSI=y"
+    "CONFIG_MEMCG=y"
+    "CONFIG_DRM_FBDEV_EMULATION=y"
+    "CONFIG_FRAMEBUFFER_CONSOLE=y"
+    "CONFIG_IRQ_REMAP=y"
+    "CONFIG_X86_X2APIC=y"
+    "CONFIG_HIGHMEM64G=y"
+    "CONFIG_PARTITION_ADVANCED=y"
+    "CONFIG_SYSFB_SIMPLEFB=y"
+    "CONFIG_DRM_SIMPLEDRM=y"
+)
+for config in "${static_configs[@]}"; do
+    sed -i "/^${config%=*}/d" .config
+    echo "$config" >> .config
+done
 make -j$(nproc) && make modules_install
 mount /boot
 cp -iv arch/x86/boot/bzImage /boot/vmlinuz-6.10.5-lfs-12.2
@@ -1490,6 +1495,34 @@ install ohci_hcd /sbin/modprobe ehci_hcd ; /sbin/modprobe -i ohci_hcd ; true
 install uhci_hcd /sbin/modprobe ehci_hcd ; /sbin/modprobe -i uhci_hcd ; true
 MODPROB
 cd /sources
+
+# Wget
+tar -xvzf wget*.tar.gz && cd wget*/
+./configure --prefix=/usr      \
+            --sysconfdir=/etc  \
+            --with-ssl=openssl &&
+make && make install
+cd /sources
+
+wget https://codeload.github.com/intel/Intel-Linux-Processor-Microcode-Data-Files/tar.gz/refs/tags/microcode-20241029 --directory-prefix=/sources
+wget https://ftp.gnu.org/gnu/cpio/cpio-2.15.tar.bz2 --directory-prefix=/sources
+wget https://github.com/vcrhonek/hwdata/archive/v0.385/hwdata-0.385.tar.gz --directory-prefix=/sources
+wget https://www.kernel.org/pub/software/scm/git/git-2.46.0.tar.xz --directory-prefix=/sources
+wget https://github.com/rhboot/efibootmgr/archive/18/efibootmgr-18.tar.gz --directory-prefix=/sources
+wget http://ftp.rpm.org/popt/releases/popt-1.x/popt-1.19.tar.gz --directory-prefix=/sources
+wget https://github.com/rhboot/efivar/archive/39/efivar-39.tar.gz --directory-prefix=/sources
+wget https://downloads.sourceforge.net/freetype/freetype-2.13.3.tar.xz --directory-prefix=/sources
+wget https://github.com/google/brotli/archive/v1.1.0/brotli-1.1.0.tar.gz --directory-prefix=/sources
+wget https://cmake.org/files/v3.30/cmake-3.30.2.tar.gz --directory-prefix=/sources
+wget https://curl.se/download/curl-8.9.1.tar.xz --directory-prefix=/sources
+wget https://github.com/lfs-book/make-ca/archive/v1.14/make-ca-1.14.tar.gz --directory-prefix=/sources
+wget https://github.com/p11-glue/p11-kit/releases/download/0.25.5/p11-kit-0.25.5.tar.xz --directory-prefix=/sources
+wget https://ftp.gnu.org/gnu/libtasn1/libtasn1-4.19.0.tar.gz --directory-prefix=/sources
+wget https://download.gnome.org/sources/librsvg/2.58/librsvg-2.58.3.tar.xz --directory-prefix=/sources
+wget https://github.com/dosfstools/dosfstools/releases/download/v4.2/dosfstools-4.2.tar.gz --directory-prefix=/sources
+wget https://ftp.gnu.org/gnu/which/which-2.21.tar.gz --directory-prefix=/sources
+wget https://downloads.sourceforge.net/sourceforge/libpng-apng/libpng-1.6.43-apng.patch.gz --directory-prefix=/sources
+wget https://downloads.sourceforge.net/libpng/libpng-1.6.43.tar.xz --directory-prefix=/sources
 
 # Grub with UEFI support
 tar -xvJf grub*.tar.xz && cd grub*/
@@ -1599,18 +1632,18 @@ echo 12.2 > /etc/lfs-release
 
 cat > /etc/lsb-release << "LSBREL"
 DISTRIB_ID="LazyOS"
-DISTRIB_RELEASE="12.2"
-DISTRIB_CODENAME="NaomiTheFem"
+DISTRIB_RELEASE="0.0.1"
+DISTRIB_CODENAME="Gentuwu"
 DISTRIB_DESCRIPTION="LazyOS"
 LSBREL
 
 cat > /etc/os-release << "OSREL"
 NAME="LazyOS"
 VERSION="12.2"
-ID=lfs
+ID=LOS
 PRETTY_NAME="LazyOS"
-VERSION_CODENAME="NaomiTheFem"
-HOME_URL="https://www.linuxfromscratch.org/lfs/"
+VERSION_CODENAME="Cyborg"
+HOME_URL="https://github.com/LazyBev/LazyOS/"
 OSREL
 
 # Git
@@ -1649,7 +1682,7 @@ make PREFIX=/usr                \
      SHAREDIR=/usr/share/hwdata \
      SHARED=yes                 \
      install install-lib        &&
-
+	 
 chmod -v 755 /usr/lib/libpci.so
 cd /sources
 
@@ -1659,68 +1692,217 @@ tar -xvzf hwdata*.tar.gz && cd hwdata*/
 make install
 cd /sources
 
-# Wget
-tar -xvzf wget*.tar.gz && cd wget*/
-./configure --prefix=/usr      \
-            --sysconfdir=/etc  \
-            --with-ssl=openssl &&
+# DKMS
+git clone https://github.com/dell/dkms.git
+cd dkms && sudo make install
+
+sudo mkdir -p /usr/src
+sudo mkdir -p /var/lib/dkms
+
+export KERNELDIR=/usr/src/linux
+sudo dkms autoinstall
+cd /sources
+
+# Drivers
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+if ! command_exists lspci; then
+    echo "Error: 'lspci' is required but not installed. Please install pciutils first."
+    exit 1
+fi
+GPU_INFO=$(lspci | grep -i 'vga\|3d\|display')
+if [ -z "$GPU_INFO" ]; then
+    echo "No GPU detected. Ensure your PCI devices are accessible."
+    exit 1
+fi
+echo "Detected GPU:"
+echo "$GPU_INFO"
+echo ""
+echo "Open Source Drivers..."
+MESA_VERSION="23.1.0"  # Update to the latest stable version as needed
+wget https://archive.mesa3d.org/mesa-$MESA_VERSION.tar.xz
+tar -xf mesa-$MESA_VERSION.tar.xz && cd mesa-$MESA_VERSION
+mkdir build && cd build
+meson setup --prefix=/usr --buildtype=release -Dgallium-drivers=radeonsi,iris,swrast ..
+ninja && sudo ninja install
+cd ../.. && rm -rf mesa-$MESA_VERSION mesa-$MESA_VERSION.tar.xz
+echo "Mesa installation complete."
+cd /sources
+
+# Audio
+PULSEAUDIO_VERSION="16.1"
+PULSEAUDIO_DIR="/sources/pulseaudio-${PULSEAUDIO_VERSION}"
+
+# Install GLib
+wget http://ftp.acc.umu.se/pub/GNOME/sources/glib/2.70/glib-2.70.0.tar.xz
+tar -xf glib-2.70.0.tar.xz
+cd glib-2.70.0
+./configure --prefix=/usr
 make && make install
-cd /
+cd /sources
 
-sh ./bedrock-linux* --hijack 
+# Install libxml2
+wget http://xmlsoft.org/sources/libxml2-2.9.10.tar.gz
+tar -xf libxml2-2.9.10.tar.gz
+cd libxml2-2.9.10
+./configure --prefix=/usr
+make && make install
+cd /sources
 
-# Check if Bedrock's `brl` is available
-if ! command -v brl &>/dev/null; then
-  echo "Bedrock's brl command not found. Please ensure Bedrock is installed." >&2
-  exit 1
-fi
+# Install dbus
+wget https://dbus.freedesktop.org/releases/dbus/dbus-1.12.16.tar.xz
+tar -xf dbus-1.12.16.tar.xz
+cd dbus-1.12.16
+./configure --prefix=/usr
+make && make install
+cd /sources
 
-# Check if an Arch stratum exists
-if ! brl list | grep -q arch; then
-  echo "No Arch Linux stratum found. Adding Arch Linux stratum..."
-  brl fetch arch || { echo "Failed to add Arch Linux stratum."; exit 1; }
-fi
+# Install libsndfile
+wget http://www.mega-nerd.com/SRC/libsndfile-1.0.31.tar.gz
+tar -xf libsndfile-1.0.31.tar.gz
+cd libsndfile-1.0.31
+./configure --prefix=/usr
+make && make install
+cd /sources
 
-# Ensure pacman is available
-if ! command -v pacman &>/dev/null; then
-  echo "Pacman is not available. Ensure your Arch Linux stratum is working properly." >&2
-  exit 1
-fi
+# Install libcap
+wget https://github.com/avinoam/libcap/releases/download/v2.56/libcap-2.56.tar.xz
+tar -xf libcap-2.56.tar.xz
+cd libcap-2.56
+make && make install
+cd /sources
 
-# Update package database
-echo "Updating pacman package database..."
-pacman -Sy || { echo "Failed to update pacman package database."; exit 1; }
+wget https://www.freedesktop.org/software/pulseaudio/releases/pulseaudio-${PULSEAUDIO_VERSION}.tar.xz
+tar -xf pulseaudio-${PULSEAUDIO_VERSION}.tar.xz
+cd pulseaudio-${PULSEAUDIO_VERSION}
+./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var --disable-static --enable-shared
+make && make install
+cat > /etc/init.d/pulseaudio << 'PA'
+#!/bin/sh
 
-# Determine CPU type and install appropriate microcode
-CPU_VENDOR=$(grep -m 1 "vendor_id" /proc/cpuinfo | awk '{print $3}')
-case $CPU_VENDOR in
-  GenuineIntel)
-    echo "Intel CPU detected. Installing intel-ucode..."
-    pacman -S --noconfirm intel-ucode || { echo "Failed to install intel-ucode."; exit 1; }
-    MICROCODE_PATH="/boot/intel-ucode.img"
+set -e
+
+# Define the PulseAudio binary location
+PULSEAUDIO="/usr/bin/pulseaudio"
+PULSEAUDIO_CONF="/etc/pulse/default.pa"
+
+# Source function library.
+. /etc/init.d/functions
+
+start() {
+    echo -n "Starting PulseAudio: "
+    # Start PulseAudio as a daemon, with a default configuration
+    start_daemon $PULSEAUDIO --daemonize=no --config-file=$PULSEAUDIO_CONF
+    echo
+}
+
+stop() {
+    echo -n "Stopping PulseAudio: "
+    # Stop PulseAudio gracefully
+    killall -TERM pulseaudio
+    echo
+}
+
+restart() {
+    stop
+    start
+}
+
+status() {
+    if pgrep -x pulseaudio > /dev/null; then
+        echo "PulseAudio is running"
+    else
+        echo "PulseAudio is not running"
+    fi
+}
+
+case "$1" in
+  start)
+    start
     ;;
-  AuthenticAMD)
-    echo "AMD CPU detected. Installing amd-ucode..."
-    pacman -S --noconfirm amd-ucode || { echo "Failed to install amd-ucode."; exit 1; }
-    MICROCODE_PATH="/boot/amd-ucode.img"
+  stop)
+    stop
+    ;;
+  restart)
+    restart
+    ;;
+  status)
+    status
     ;;
   *)
-    echo "Unknown CPU vendor: $CPU_VENDOR. Exiting." >&2
+    echo "Usage: $0 {start|stop|restart|status}"
     exit 1
     ;;
 esac
+exit 0
+PA
+
+chmod +x /etc/init.d/pulseaudio
+ln -s /etc/init.d/pulseaudio /etc/rc.d/rc3.d/S99pulseaudio
+cd /sources
+
+# Bedrocking
+read -p "Do you want to install bedrock linux? [y/N]: " bedrock_choice
+if [[ "$bedrock_choice" == "y" ]]; then
+	wget https://github.com/bedrocklinux/bedrocklinux-userland/releases/download/0.7.30/bedrock-linux-0.7.30-x86_64.sh --directory-prefix=/sources
+	sh ./bedrock-linux* --hijack 
+	
+	# Check if Bedrock's `brl` is available
+	if ! command -v brl &>/dev/null; then
+	  echo "Bedrock's brl command not found. Please ensure Bedrock is installed." >&2
+	  exit 1
+	fi
+	
+	# Check if an Arch stratum exists
+	if ! brl list | grep -q arch; then
+	  echo "No Arch Linux stratum found. Adding Arch Linux stratum..."
+	  brl fetch arch || { echo "Failed to add Arch Linux stratum."; exit 1; }
+	fi
+	
+	# Ensure pacman is available
+	if ! command -v pacman &>/dev/null; then
+	  echo "Pacman is not available. Ensure your Arch Linux stratum is working properly." >&2
+	  exit 1
+	fi
+	
+	# Update package database
+	echo "Updating pacman package database..."
+	pacman -Sy || { echo "Failed to update pacman package database."; exit 1; }
+
+	# Determine CPU type and install appropriate microcode
+	CPU_VENDOR=$(grep -m 1 "vendor_id" /proc/cpuinfo | awk '{print $3}')
+	case $CPU_VENDOR in
+	  GenuineIntel)
+	    echo "Intel CPU detected. Installing intel-ucode..."
+	    pacman -S --noconfirm intel-ucode || { echo "Failed to install intel-ucode."; exit 1; }
+	    MICROCODE_PATH="/boot/intel-ucode.img"
+	    ;;
+	  AuthenticAMD)
+	    echo "AMD CPU detected. Installing amd-ucode..."
+	    pacman -S --noconfirm amd-ucode || { echo "Failed to install amd-ucode."; exit 1; }
+	    MICROCODE_PATH="/boot/amd-ucode.img"
+	    ;;
+	  *)
+	    echo "Unknown CPU vendor: $CPU_VENDOR. Exiting." >&2
+	    exit 1
+	    ;;
+	esac
+else
+	echo "Skipping bedrock installation..."
+fi
 
 # Update GRUB configuration
 if [[ -f /etc/default/grub ]]; then
-  echo "Updating GRUB configuration..."
-  GRUB_CMDLINE=$(grep "^GRUB_CMDLINE_LINUX" /etc/default/grub)
-  if ! echo "$GRUB_CMDLINE" | grep -q "$MICROCODE_PATH"; then
-    sed -i "/^GRUB_CMDLINE_LINUX/s|\"$| ${MICROCODE_PATH}\"|" /etc/default/grub
-  fi
-  grub-mkconfig -o /boot/grub/grub.cfg || { echo "Failed to update GRUB configuration."; exit 1; }
+    echo "Updating GRUB configuration..."
+    GRUB_CMDLINE=$(grep "^GRUB_CMDLINE_LINUX" /etc/default/grub)
+    if ! echo "$GRUB_CMDLINE" | grep -q "$MICROCODE_PATH"; then
+      sed -i "/^GRUB_CMDLINE_LINUX/s|\"$| ${MICROCODE_PATH}\"|" /etc/default/grub
+    fi
+    grub-mkconfig -o /boot/grub/grub.cfg || { echo "Failed to update GRUB configuration."; exit 1; }
 else
-  echo "/etc/default/grub not found. Please configure your bootloader manually to include $MICROCODE_PATH."
-  exit 1
+    echo "/etc/default/grub not found. Please configure your bootloader manually to include $MICROCODE_PATH."
+    exit 1
 fi
 
 EOF
