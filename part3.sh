@@ -2396,7 +2396,12 @@ make && make install
 cd /sources
 
 # Twm
-
+wget https://www.x.org/pub/individual/app/twm-1.0.12.tar.xz
+tar -xvJf twm-1.0.12.tar.xz && twm-1.0.12.tar.xz
+sed -i -e '/^rcdir =/s,^\(rcdir = \).*,\1/etc/X11/app-defaults,' src/Makefile.in &&
+./configure $XORG_CONFIG &&
+make && make install
+cd /sources
 
 # Bedrocking
 read -p "Do you want to install bedrock linux? [y/N]: " bedrock_choice
