@@ -8,6 +8,13 @@ export LFS=/mnt/lfs
 export LFS_TGT=$(uname -m)-lfs-linux-gnu
 export LC_ALL=C 
 export PATH=/usr/bin:/bin
+export hostname
+export user
+export password
+export keyboard
+export locale
+export timezone
+export cpu
 
 cat > ~/.bash_profile << "EOF"
 exec env -i HOME=$HOME TERM=$TERM PS1='\u:\w\$ ' /bin/bash
