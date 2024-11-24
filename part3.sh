@@ -2363,6 +2363,7 @@ tar -xvjf mtdev-1.1.7.tar.bz2 && cd mtdev-1.1.7
 make && make install
 cd /sources
 
+# Xorg input drivers
 wget https://github.com/linuxwacom/xf86-input-wacom/releases/download/xf86-input-wacom-1.2.2/xf86-input-wacom-1.2.2.tar.bz2
 tar -xvjf xf86-input-wacom-1.2.2.tar.bz2 && cd xf86-input-wacom-1.2.2
 ./configure $XORG_CONFIG --with-systemd-unit-dir=no &&
@@ -2384,9 +2385,17 @@ cd /sources
 
 wget https://www.x.org/pub/individual/driver/xf86-input-libinput-1.4.0.tar.xz
 tar -xvJf xf86-input-libinput-1.4.0.tar.xz && cd xf86-input-libinput-1.4.0
+./configure $XORG_CONFIG &&
+make && make install
+cd /sources
 
 wget https://www.x.org/pub/individual/driver/xf86-input-synaptics-1.9.2.tar.xz
 tar -xvJf xf86-input-synaptics-1.9.2.tar.xz && cd xf86-input-synaptics-1.9.2
+./configure $XORG_CONFIG &&
+make && make install
+cd /sources
+
+# Twm
 
 
 # Bedrocking
