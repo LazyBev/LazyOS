@@ -1460,15 +1460,27 @@ if [[ "$disk" == /dev/nvme* ]]; then
     echo "CONFIG_BLK_DEV_NVME=y" >> .config
 fi
 static_configs=(
+    "CONFIG_HID=m"
+    "CONFIG_HID_WACOM=m"
+    "CONFIG_HID_SUPPORT=y"
+    "CONFIG_USB=m"
+    "CONFIG_USB_HID=m"
+    "CONFIG_USB_SUPPORT=y"
+    "CONFIG_INPUT=y"
+    "CONFIG_INPUT_MISC=y"
+    "CONFIG_INPUT_EVDEV=m"
+    "CONFIG_INPUT_UINPUT=m"
     "CONFIG_DRM_I915=m"
     "CONFIG_DRM_RADEON=m"
+    "CONFIG_DRM_AMD_DC=y"
     "CONFIG_DRM_AMDGPU=m"
     "CONFIG_DRM_AMDGPU_SI=y"
     "CONFIG_DRM_AMDGPU_CIK=y"
-    "CONFIG_DRM_AMDG_DC=y"
     "CONFIG_DRM_VGEM=m"
     "CONFIG_DRM_VMWGFX=m"
-    "ONFIG_DRM_NOUVEAU=y"
+    "CONFIG_DRM_BOCHS=m"
+    "CONFIG_DRM_VBOXVIDEO=m"
+    "CONFIG_DRM_NOUVEAU=y"
     "CONFIG_FUSE_FS=y"
     "CONFIG_PSI=y"
     "CONFIG_MEMCG=y"
@@ -2260,7 +2272,6 @@ tar -xvJf xcursor-themes-1.0.7.tar.xz && cd xcursor-themes-1.0.7
 ./configure --prefix=/usr &&
 make && make install
 cd /sources
-
 cat > font-7.md5 << "XFONTS"
 a6541d12ceba004c0c1e3df900324642  font-util-1.4.1.tar.xz
 a56b1a7f2c14173f71f010225fa131f1  encodings-1.1.0.tar.xz
@@ -2300,6 +2311,82 @@ exit
 install -v -d -m755 /usr/share/fonts 
 ln -svfn $XORG_PREFIX/share/fonts/X11/OTF /usr/share/fonts/X11-OTF &&
 ln -svfn $XORG_PREFIX/share/fonts/X11/TTF /usr/share/fonts/X11-TTF
+cd /sources
+
+# XKeyboardConfig
+wget https://www.x.org/pub/individual/data/xkeyboard-config/xkeyboard-config-2.42.tar.xz
+tar -xvJf xkeyboard-config-2.42.tar.xz && cd xkeyboard-config-2.42
+mkdir build && cd build
+meson setup --prefix=$XORG_PREFIX --buildtype=release ..
+ninja && ninja install
+cd /sources
+
+# Xorg server
+wget https://www.cairographics.org/releases/pixman-0.43.4.tar.gz
+tar -xvzf pixman-0.43.4.tar.gz && cd pixman-0.43.4
+mkdir build && cd build
+meson setup --prefix=$XORG_PREFIX --buildtype=release ..
+ninja && ninja install
+cd /sources
+wget https://www.x.org/pub/individual/xserver/xorg-server-21.1.13.tar.xz
+wget https://www.linuxfromscratch.org/patches/blfs/12.2/xorg-server-21.1.13-tearfree_backport-2.patch
+tar -xvJf xorg-server-21.1.13.tar.xz&& cd xorg-server-21.1.13
+cd /sources
+patch -Np1 -i ../xorg-server-21.1.13-tearfree_backport-2.patch
+kdir build && cd build
+eson setup ..               \
+      --prefix=$XORG_PREFIX  \
+      --localstatedir=/var   \
+      -D glamor=true         \
+      -D systemd_logind=true \
+      -D xkb_output_dir=/var/lib/xkb
+ninja && ninja install
+mkdir -pv /etc/X11/xorg.conf.d &&
+install -v -d -m1777 /tmp/.{ICE,X11}-unix &&
+cat >> /etc/sysconfig/createfiles << "CRF"
+/tmp/.ICE-unix dir 1777 root root
+/tmp/.X11-unix dir 1777 root root
+CRF
+cd /sources
+wget https://www.freedesktop.org/software/libevdev/libevdev-1.13.2.tar.xz
+tar -xvJf libevdev-1.13.2.tar.xz && cd libevdev-1.13.2
+mkdir build && cd build
+meson setup ..                  \
+      --prefix=$XORG_PREFIX     \
+      --buildtype=release       \
+      -D documentation=disabled &&
+ninja && ninja install
+cd /sources
+wget https://bitmath.org/code/mtdev/mtdev-1.1.7.tar.bz2
+tar -xvjf mtdev-1.1.7.tar.bz2 && cd mtdev-1.1.7
+./configure --prefix=/usr --disable-static &&
+make && make install
+cd /sources
+
+wget https://github.com/linuxwacom/xf86-input-wacom/releases/download/xf86-input-wacom-1.2.2/xf86-input-wacom-1.2.2.tar.bz2
+tar -xvjf xf86-input-wacom-1.2.2.tar.bz2 && cd xf86-input-wacom-1.2.2
+./configure $XORG_CONFIG --with-systemd-unit-dir=no &&
+make && make install
+cd ./sources
+
+wget https://gitlab.freedesktop.org/libinput/libinput/-/archive/1.26.1/libinput-1.26.1.tar.gz
+tar -xvzf libinput-1.26.1.tar.gz && cd libinput-1.26.1
+mkdir build && cd build
+meson setup ..                  \
+      --prefix=$XORG_PREFIX     \
+      --buildtype=release       \
+      -D debug-gui=false        \
+      -D tests=false            \
+      -D libwacom=false         \
+      -D udev-dir=/usr/lib/udev &&
+ninja && ninja install
+cd /sources
+
+wget https://www.x.org/pub/individual/driver/xf86-input-libinput-1.4.0.tar.xz
+tar -xvJf xf86-input-libinput-1.4.0.tar.xz && cd xf86-input-libinput-1.4.0
+
+wget https://www.x.org/pub/individual/driver/xf86-input-synaptics-1.9.2.tar.xz
+tar -xvJf xf86-input-synaptics-1.9.2.tar.xz && cd xf86-input-synaptics-1.9.2
 
 
 # Bedrocking
