@@ -1525,8 +1525,6 @@ wget https://ftp.gnu.org/gnu/libtasn1/libtasn1-4.19.0.tar.gz --directory-prefix=
 wget https://download.gnome.org/sources/librsvg/2.58/librsvg-2.58.3.tar.xz --directory-prefix=/sources
 wget https://github.com/dosfstools/dosfstools/releases/download/v4.2/dosfstools-4.2.tar.gz --directory-prefix=/sources
 wget https://ftp.gnu.org/gnu/which/which-2.21.tar.gz --directory-prefix=/sources
-wget https://downloads.sourceforge.net/sourceforge/libpng-apng/libpng-1.6.43-apng.patch.gz --directory-prefix=/sources
-wget https://downloads.sourceforge.net/libpng/libpng-1.6.43.tar.xz --directory-prefix=/sources
 
 # Grub with UEFI support
 tar -xvJf grub*.tar.xz && cd grub*/
@@ -2135,7 +2133,174 @@ tar -xvJf xcb-util-cursor-0.1.4.tar.xz && cd xcb-util-cursor-0.1.4
 make && make install
 cd /sources
 
-#
+# Mesa
+wget https://dri.freedesktop.org/libdrm/libdrm-2.4.122.tar.xz
+tar -xvJf libdrm-2.4.122.tar.xz && cd libdrm-2.4.122/
+mkdir build && cd build
+meson setup --prefix=$XORG_PREFIX \
+            --buildtype=release   \
+            -D udev=true          \
+            -D valgrind=disabled  \
+            ..                    &&
+ninja && ninja install
+cd /sources
+wget https://files.pythonhosted.org/packages/source/M/Mako/Mako-1.3.5.tar.gz
+tar -xvzf Mako-1.3.5.tar.gz && cd Mako-1.3.5
+pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+pip3 install --no-index --find-links=dist --no-cache-dir --no-user Mako
+cd /sources
+wget https://mesa.freedesktop.org/archive/mesa-24.1.5.tar.xz
+wget https://www.linuxfromscratch.org/patches/blfs/12.2/mesa-add_xdemos-2.patch
+tar -xvJf mesa-24.1.5.tar.xz && cd mesa-24.1.5
+patch -Np1 -i ../mesa-add_xdemos-2.patch
+mkdir build && cd build
+meson setup ..                 \
+      --prefix=$XORG_PREFIX    \
+      --buildtype=release      \
+      -D platforms=x11,wayland \
+      -D gallium-drivers=auto  \
+      -D vulkan-drivers=auto   \
+      -D valgrind=disabled     \
+      -D libunwind=disabled    &&
+
+ninja && ninja install
+cp -rv ../docs -T /usr/share/doc/mesa-24.1.5
+cd /sources
+
+# Xbitmaps
+wget https://www.x.org/pub/individual/data/xbitmaps-1.1.3.tar.xz
+./configure $XORG_CONFIG && make install
+cd /sources
+
+# Xorg apps
+wget https://downloads.sourceforge.net/libpng/libpng-1.6.43.tar.xz
+wget https://downloads.sourceforge.net/sourceforge/libpng-apng/libpng-1.6.43-apng.patch.gz
+tar -xvJf libpng-1.6.43.tar.xz && cd libpng-1.6.43
+gzip -cd ../libpng-1.6.43-apng.patch.gz | patch -p1
+./configure --prefix=/usr --disable-static
+make && make install &&
+mkdir -v /usr/share/doc/libpng-1.6.43 &&
+cp -v README libpng-manual.txt /usr/share/doc/libpng-1.6.43
+cd /sources
+
+cat > app-7.md5 << "XAPPS"
+30f898d71a7d8e817302970f1976198c  iceauth-1.0.10.tar.xz
+7dcf5f702781bdd4aaff02e963a56270  mkfontscale-1.2.3.tar.xz
+05423bb42a006a6eb2c36ba10393de23  sessreg-1.1.3.tar.xz
+1d61c9f4a3d1486eff575bf233e5776c  setxkbmap-1.3.4.tar.xz
+9f7a4305f0e79d5a46c3c7d02df9437d  smproxy-1.0.7.tar.xz
+e96b56756990c56c24d2d02c2964456b  x11perf-1.6.1.tar.bz2
+595c941d9aff6f6d6e038c4e42dcff58  xauth-1.1.3.tar.xz
+82a90e2feaeab5c5e7610420930cc0f4  xcmsdb-1.0.6.tar.xz
+89e81a1c31e4a1fbd0e431425cd733d7  xcursorgen-1.0.8.tar.xz
+933e6d65f96c890f8e96a9f21094f0de  xdpyinfo-1.3.4.tar.xz
+34aff1f93fa54d6a64cbe4fee079e077  xdriinfo-1.0.7.tar.xz
+f29d1544f8dd126a1b85e2f7f728672d  xev-1.2.6.tar.xz
+41afaa5a68cdd0de7e7ece4805a37f11  xgamma-1.0.7.tar.xz
+48ac13856838d34f2e7fca8cdc1f1699  xhost-1.0.9.tar.xz
+8e4d14823b7cbefe1581c398c6ab0035  xinput-1.6.4.tar.xz
+83d711948de9ccac550d2f4af50e94c3  xkbcomp-1.4.7.tar.xz
+05ce1abd8533a400572784b1186a44d0  xkbevd-1.1.5.tar.xz
+07483ddfe1d83c197df792650583ff20  xkbutils-1.0.6.tar.xz
+f62b99839249ce9a7a8bb71a5bab6f9d  xkill-1.0.6.tar.xz
+da5b7a39702841281e1d86b7349a03ba  xlsatoms-1.1.4.tar.xz
+ab4b3c47e848ba8c3e47c021230ab23a  xlsclients-1.1.5.tar.xz
+ba2dd3db3361e374fefe2b1c797c46eb  xmessage-1.0.7.tar.xz
+0d66e07595ea083871048c4b805d8b13  xmodmap-1.0.11.tar.xz
+ab6c9d17eb1940afcfb80a72319270ae  xpr-1.2.0.tar.xz
+d050642a667b518cb3429273a59fa36d  xprop-1.2.7.tar.xz
+f822a8d5f233e609d27cc22d42a177cb  xrandr-1.5.2.tar.xzx
+c8629d5a0bc878d10ac49e1b290bf453  xrdb-1.2.2.tar.xz
+55003733ef417db8fafce588ca74d584  xrefresh-1.1.0.tar.xz
+18ff5cdff59015722431d568a5c0bad2  xset-1.2.5.tar.xz
+fa9a24fe5b1725c52a4566a62dd0a50d  xsetroot-1.1.3.tar.xz
+d698862e9cad153c5fefca6eee964685  xvinfo-1.1.5.tar.xz
+b0081fb92ae56510958024242ed1bc23  xwd-1.0.9.tar.xz
+c91201bc1eb5e7b38933be8d0f7f16a8  xwininfo-1.1.6.tar.xz
+5ff5dc120e8e927dc3c331c7fee33fc3  xwud-1.0.6.tar.xz
+XAPPS
+mkdir app &&
+cd app &&
+grep -v '^#' ../app-7.md5 | awk '{print $2}' | wget -i- -c \
+    -B https://www.x.org/pub/individual/app/ &&
+md5sum -c ../app-7.md5
+as_root()
+{
+  if   [ $EUID = 0 ];        then $*
+  elif [ -x /usr/bin/sudo ]; then sudo $*
+  else                            su -c \\"$*\\"
+  fi
+}
+export -f as_root
+bash -e
+for package in $(grep -v '^#' ../app-7.md5 | awk '{print $2}')
+do
+    packagedir=${package%.tar.?z*}
+    tar -xf $package
+    pushd $packagedir
+       ./configure $XORG_CONFIG
+       make
+       as_root make install
+    popd
+    rm -rf $packagedir
+done
+exit; as_root rm -f $XORG_PREFIX/bin/xkeystone
+cd /sources
+
+# Luit
+wget https://invisible-mirror.net/archives/luit/luit-20240102.tgz
+tar -xvzf luit-20240102.tgz && cd luit-20240102
+./configure $XORG_CONFIG &&
+make && make install
+cd /sources
+
+# Xcursor-themes
+wget https://www.x.org/pub/individual/data/xcursor-themes-1.0.7.tar.xz
+tar -xvJf xcursor-themes-1.0.7.tar.xz && cd xcursor-themes-1.0.7
+./configure --prefix=/usr &&
+make && make install
+cd /sources
+
+cat > font-7.md5 << "XFONTS"
+a6541d12ceba004c0c1e3df900324642  font-util-1.4.1.tar.xz
+a56b1a7f2c14173f71f010225fa131f1  encodings-1.1.0.tar.xz
+79f4c023e27d1db1dfd90d041ce89835  font-alias-1.0.5.tar.xz
+546d17feab30d4e3abcf332b454f58ed  font-adobe-utopia-type1-1.0.5.tar.xz
+063bfa1456c8a68208bf96a33f472bb1  font-bh-ttf-1.0.4.tar.xz
+51a17c981275439b85e15430a3d711ee  font-bh-type1-1.0.4.tar.xz
+00f64a84b6c9886040241e081347a853  font-ibm-type1-1.0.4.tar.xz
+fe972eaf13176fa9aa7e74a12ecc801a  font-misc-ethiopic-1.0.5.tar.xz
+3b47fed2c032af3a32aad9acc1d25150  font-xfree86-type1-1.0.5.tar.xz
+XFONTS
+mkdir font && cd font
+grep -v '^#' ../font-7.md5 | awk '{print $2}' | wget -i- -c \
+    -B https://www.x.org/pub/individual/font/ &&
+md5sum -c ../font-7.md5
+as_root()
+{
+  if   [ $EUID = 0 ];        then $*
+  elif [ -x /usr/bin/sudo ]; then sudo $*
+  else                            su -c \\"$*\\"
+  fi
+}
+export -f as_root
+bash -e
+for package in $(grep -v '^#' ../font-7.md5 | awk '{print $2}')
+do
+    packagedir=${package%.tar.?z*}
+    tar -xf $package
+    pushd $packagedir
+        ./configure $XORG_CONFIG
+        make
+        as_root make install
+    popd
+    as_root rm -rf $packagedir
+done
+exit 
+install -v -d -m755 /usr/share/fonts 
+ln -svfn $XORG_PREFIX/share/fonts/X11/OTF /usr/share/fonts/X11-OTF &&
+ln -svfn $XORG_PREFIX/share/fonts/X11/TTF /usr/share/fonts/X11-TTF
+
 
 # Bedrocking
 read -p "Do you want to install bedrock linux? [y/N]: " bedrock_choice
