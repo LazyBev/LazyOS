@@ -132,6 +132,21 @@ fi
 
 sudo pacman -S arch-install-scripts
 
+# Function to prompt for user input with a default value
+prompt() {
+    local prompt_text="$1"
+    local default_value="$2"
+    read -p "$prompt_text [$default_value]: " input
+    echo "${input:-$default_value}"
+}
+
+export hostname=$(prompt "Enter the hostname" "gentuwu")
+export user=$(prompt "Enter the username" "user")
+export password=""; read -sp "Enter the password: " password; echo
+export keyboard=$(prompt "Enter key map for keyboard" "uk")
+export locale=$(prompt "Enter the locale" "en_GB.UTF-8")
+export timezone=$(prompt "Enter the timezone" "Europe/London")
+
 lsblk
 read -p "Enter the disk to install on (e.g., /dev/sda): " disk
 
@@ -175,7 +190,6 @@ sleep 2
 mkdir -pv "$LFS"
 mount -v -t ext4 "$rootp" "$LFS"
 mount --mkdir -v -t vfat "$bootP" /boot/efi
-swapon -v "$swapP" || { echo "Failed to enable swap partition" && exit 1; }
 
 echo -e "Adding entry to /etc/fstab"
 sleep 2
@@ -191,12 +205,9 @@ fi
 
 # Add entry to /etc/fstab
 echo -e "\n# $rootp\nUUID=$UUID /mnt/lfs  $fstype  defaults  1  1" | sudo tee -a /etc/fstab
+echo "Setting up base system..." && sleep 2
 
-echo -e "Setting up base system..."
-sleep 2
-
-mkdir -v $LFS/sources
-ls $LFS
+mkdir -v $LFS/sources && ls $LFS
 chmod -v a+wt $LFS/sources
 
 wget https://download.savannah.gnu.org/releases/acl/acl-2.3.2.tar.xz --directory-prefix=$LFS/sources
