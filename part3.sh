@@ -110,14 +110,14 @@ chmod -v 600  /var/log/btmp
 cd sources
 tar -xvJf gettext*.tar.xz && cd gettext*/
 ./configure --disable-shared
-make -j$(nproc)
+make
 cp -v gettext-tools/src/{msgfmt,msgmerge,xgettext} /usr/bin
 cd /sources
 # Bison
 tar -xvJf gettext*.tar.xz && cd gettext*/ 
 ./configure --prefix=/usr \
             --docdir=/usr/share/doc/bison-3.8.2
-make -j$(nproc) && make install
+make && make install
 cd /sources
 
 # Perl
@@ -132,7 +132,7 @@ sh Configure -des                                         \
              -D sitearch=/usr/lib/perl5/5.40/site_perl    \
              -D vendorlib=/usr/lib/perl5/5.40/vendor_perl \
              -D vendorarch=/usr/lib/perl5/5.40/vendor_perl
-make -j$(nproc) && make install
+make && make install
 cd /sources
 
 # Python
@@ -140,13 +140,13 @@ tar -xvJf python*.tar.xz && cd python*/
 ./configure --prefix=/usr   \
             --enable-shared \
             --without-ensurepip
-make -j$(nproc) && make install
+make && make install
 cd /sources
 
 # Texinfo
 tar -xvJf texinfo*.tar.xz && cd texinfo*/
 ./configure --prefix=/usr
-make -j$(nproc) && make install
+make && make install
 cd /sources
 
 # Util-linux
@@ -166,7 +166,7 @@ mkdir -pv /var/lib/hwclock
             --without-python      \
             ADJTIME_PATH=/var/lib/hwclock/adjtime \
             --docdir=/usr/share/doc/util-linux-2.40.2
-make -j$(nproc) && make install
+make && make install
 
 # Cleanup
 rm -rf /usr/share/{info,man,doc}/*
@@ -196,7 +196,7 @@ echo "rootsbindir=/usr/sbin" > configparms
              --enable-stack-protector=strong          \
              --disable-nscd                           \
              libc_cv_slibdir=/usr/lib
-make -j$(nproc) && make check
+make && make check
 touch /etc/ld.so.conf
 sed '/test-installation/s@$(PERL)@echo not running@' -i ../Makefile
 make install
@@ -292,7 +292,7 @@ mkdir -pv /etc/ld.so.conf.d
 # Zlib
 tar -xvzf zlib*.tar.gz && cd zlib*/
 ./configure --prefix=/usr
-make -j$(nproc) && make check && make install
+make && make check && make install
 rm -fv /usr/lib/libz.a
 cd /sources
 
@@ -301,7 +301,7 @@ tar -xvzf bzip2*.tar.gz && cd bzip2*/
 patch -Np1 -i ../bzip2*.patch
 sed -i 's@\(ln -s -f \)$(PREFIX)/bin/@\1@' Makefile
 sed -i "s@(PREFIX)/man@(PREFIX)/share/man@g" Makefile
-make -j$(nproc) -f Makefile-libbz2_so && make clean && make -j$(nproc) && make PREFIX=/usr install
+make -f Makefile-libbz2_so && make clean && make && make PREFIX=/usr install
 cp -av libbz2.so.* /usr/lib
 ln -sv libbz2.so.1.0.8 /usr/lib/libbz2.so
 cp -v bzip2-shared /usr/bin/bzip2
@@ -316,24 +316,24 @@ tar -xvJf xz*.tar.xz && cd xz*/
 ./configure --prefix=/usr    \
             --disable-static \
             --docdir=/usr/share/doc/xz-5.6.2
-make -j$(nproc) && make check && make install
+make && make check && make install
 cd /sources
 
 # Lz4
 tar -xvzf lz4*.tar.gz && cd lz4*/
-make -j$(nproc) BUILD_STATIC=no PREFIX=/usr && make -j1 check && make BUILD_STATIC=no PREFIX=/usr install
+make BUILD_STATIC=no PREFIX=/usr && make -j1 check && make BUILD_STATIC=no PREFIX=/usr install
 cd /sources
 
 # Zstd
 tar -xvzf zstd*.tar.gz && cd zstd*/
-make -j$(nproc) prefix=/usr && make check && make prefix=/usr install
+make prefix=/usr && make check && make prefix=/usr install
 rm -v /usr/lib/libzstd.a
 cd /sources
 
 # File
 tar -xvzf file*.tar.gz && cd file*/
 /configure --prefix=/usr
-make -j$(nproc) && make check && make install
+make && make check && make install
 cd /sources
 
 # Readline
@@ -345,20 +345,20 @@ sed -i 's/-Wl,-rpath,[^ ]*//' support/shobj-conf
             --disable-static \
             --with-curses    \
             --docdir=/usr/share/doc/readline-8.2.13
-make -j$(nproc) SHLIB_LIBS="-lncursesw" && make SHLIB_LIBS="-lncursesw" install
+make SHLIB_LIBS="-lncursesw" && make SHLIB_LIBS="-lncursesw" install
 install -v -m644 doc/*.{ps,pdf,html,dvi} /usr/share/doc/readline-8.2.13
 cd /sources
 
 # M4
 tar -xvJf m4*.tar.xz && cd m4*/
 ./configure --prefix=/usr
-make -j$(nproc) && make check && make install
+make && make check && make install
 cd /sources
 
 # Bc
 tar -xvJf bc*.tar.xz && cd bc*/
 CC=gcc ./configure --prefix=/usr -G -O3 -r
-make -j$(nproc) && make test && make install
+make && make test && make install
 cd /sources
 
 # Flex
@@ -366,7 +366,7 @@ tar -xvzf flex*.tar.gz && cd flex*/
 ./configure --prefix=/usr \
             --docdir=/usr/share/doc/flex-2.6.4 \
             --disable-static
-make -j$(nproc) && make check && make install
+make && make check && make install
 ln -sv flex   /usr/bin/lex
 ln -sv flex.1 /usr/share/man/man1/lex.1
 cd /sources
@@ -378,7 +378,7 @@ cd unix
 ./configure --prefix=/usr           \
             --mandir=/usr/share/man \
             --disable-rpath
-make -j$(nproc)
+make
 
 sed -e "s|$SRCDIR/unix|/usr/lib|" \
     -e "s|$SRCDIR|/usr/include|"  \
@@ -417,7 +417,7 @@ patch -Np1 -i ../expect*.patch
             --disable-rpath         \
             --mandir=/usr/share/man \
             --with-tclinclude=/usr/include
-make -j$(nproc) && make test && make install
+make && make test && make install
 ln -svf expect5.45.4/libexpect5.45.4.so /usr/lib
 cd /sources
 
@@ -438,7 +438,7 @@ tar -xvJf pkgconf*.tar.xz && cd pkgconf*/
 ./configure --prefix=/usr              \
             --disable-static           \
             --docdir=/usr/share/doc/pkgconf-2.3.0
-make -j$(nproc) && make install
+make && make install
 ln -sv pkgconf   /usr/bin/pkg-config
 ln -sv pkgconf.1 /usr/share/man/man1/pkg-config.1
 cd /sources
@@ -457,7 +457,7 @@ mkdir -v build && cd build
              --enable-new-dtags  \
              --with-system-zlib  \
              --enable-default-hash-style=gnu
-make -j$(nproc) tooldir=/usr && make -k check && make tooldir=/usr install
+make tooldir=/usr && make -k check && make tooldir=/usr install
 rm -fv /usr/lib/lib{bfd,ctf,ctf-nobfd,gprofng,opcodes,sframe}.a
 rm -rf build
 cd /sources
@@ -468,7 +468,7 @@ tar -xvJf gmp*.tar.xz && cd gmp*/
             --enable-cxx     \
             --disable-static \
             --docdir=/usr/share/doc/gmp-6.3.0
-make -j$(nproc) && make html
+make && make html
 make check 2>&1 | tee gmp-check-log
 make install && make install-html
 cd /sources
@@ -500,7 +500,7 @@ tar -xvzf attr*.tar.gz && cd attr*/
             --disable-static  \
             --sysconfdir=/etc \
             --docdir=/usr/share/doc/attr-2.5.2
-make -j$(nproc) && make check
+make && make check
 make install
 cd /sources
 
@@ -509,13 +509,13 @@ tar -xvzf acl*.tar.gz && cd acl*/
 ./configure --prefix=/usr         \
             --disable-static      \
             --docdir=/usr/share/doc/acl-2.3.2
-make -j$(nproc) && make install
+make && make install
 cd /sources
 
 # Libcap
 tar -xvJf libcap*.tar.xz && cd libcap*/
 sed -i '/install -m.*STA/d' libcap/Makefile
-make -j$(nproc) prefix=/usr lib=lib 
+make prefix=/usr lib=lib 
 make test && make prefix=/usr lib=lib install
 cd /sources
 
@@ -526,14 +526,14 @@ tar -xvJf libxcrypt*.tar.xz && cd libxcrypt*/
             --enable-obsolete-api=no     \
             --disable-static             \
             --disable-failure-tokens
-make -j$(nproc) && make check
+make && make check
 make install && make distclean
 ./configure --prefix=/usr                \
             --enable-hashes=strong,glibc \
             --enable-obsolete-api=glibc  \
             --disable-static             \
             --disable-failure-tokens
-make -j$(nproc)
+make
 cp -av --remove-destination .libs/libcrypt.so.1* /usr/lib
 cd /sources
 
@@ -550,7 +550,7 @@ touch /usr/bin/passwd
             --with-{b,yes}crypt \
             --without-libbsd    \
             --with-group-name-max-length=32
-make -j$(nproc)
+make
 make exec_prefix=/usr install && make -C man install-man
 pwconv && grpconv
 mkdir -p /etc/default && useradd -D --gid 999
@@ -577,7 +577,7 @@ mkdir -v build && cd build
              --disable-bootstrap      \
              --disable-fixincludes    \
              --with-system-zlib
-make -j$(nproc)
+make
 ulimit -s -H unlimited
 sed -e '/cpython/d'               -i ../gcc/testsuite/gcc.dg/plugin/plugin.exp
 sed -e 's/no-pic /&-no-pie /'     -i ../gcc/testsuite/gcc.target/i386/pr113689-1.c
@@ -617,7 +617,7 @@ tar -xvzf ncurses*.tar.gz && cd ncurses*/
             --with-cxx-shared       \
             --enable-pc-files       \
             --with-pkg-config-libdir=/usr/lib/pkgconfig
-make -j$(nproc) && make DESTDIR=$PWD/dest install
+make && make DESTDIR=$PWD/dest install
 install -vm755 dest/usr/lib/libncursesw.so.6.5 /usr/lib
 rm -v  dest/usr/lib/libncursesw.so.6.5
 sed -e 's/^#if.*XOPEN.*$/#if 1/' \
@@ -654,7 +654,7 @@ cd /sources
 # Psmisc
 tar -xvJf psmisc*.tar.xz && cd psmisc*/
 ./configure --prefix=/usr
-make -j$(nproc) && make check
+make && make check
 make install
 cd /sources
 
@@ -663,7 +663,7 @@ tar -xvJf gettext*.tar.xz && cd gettext*/
 ./configure --prefix=/usr    \
             --disable-static \
             --docdir=/usr/share/doc/gettext-0.22.5
-make -j$(nproc) && make check
+make && make check
 make install
 chmod -v 0755 /usr/lib/preloadable_libintl.so
 cd /sources
@@ -671,7 +671,7 @@ cd /sources
 # Bison
 tar -xvJf bison*.tar.xz && cd bison*/
 ./configure --prefix=/usr --docdir=/usr/share/doc/bison-3.8.2
-make -j$(nproc) && make check
+make && make check
 make install
 cd /sources
 
@@ -679,7 +679,7 @@ cd /sources
 tar -xvJf grep*.tar.xz && cd grep*/
 sed -i "s/echo/#echo/" src/egrep.sh
 ./configure --prefix=/usr
-make -j$(nproc) && make check
+make && make check
 make install
 cd /sources
 
@@ -690,7 +690,7 @@ tar -xvzf bash*.tar.gz && cd bash*/
             --with-installed-readline \
             bash_cv_strtold_broken=no \
             --docdir=/usr/share/doc/bash-5.2.32
-make -j$(nproc) && chown -R tester .
+make && chown -R tester .
 su -s /usr/bin/expect tester << "TEST"
 set timeout -1
 spawn make tests
@@ -705,7 +705,7 @@ cd /sources
 # Libtool
 tar -xvJf libtool*.tar.xz && cd libtool*/
 ./configure --prefix=/usr
-make -j$(nproc) && make -k check
+make && make -k check
 make install
 rm -fv /usr/lib/libltdl.a
 cd /sources
@@ -715,14 +715,14 @@ tar -xvzf gdbm*.tar.gz && cd gdbm*/
 ./configure --prefix=/usr    \
             --disable-static \
             --enable-libgdbm-compat
-make -j$(nproc) && make -k check
+make && make -k check
 make install
 cd /sources
 
 # Gperf
 tar -xvzf gperf*.tar.gz && cd tar -xvzf gdbm*.tar.gz && cd gdbm*/*/
 ./configure --prefix=/usr --docdir=/usr/share/doc/gperf-3.1
-make -j$(nproc) && make -j1 check
+make && make -j1 check
 make install
 cd /sources
 
@@ -731,7 +731,7 @@ tar -xvJf expat*.tar.xz && cd expat*/
 ./configure --prefix=/usr    \
             --disable-static \
             --docdir=/usr/share/doc/expat-2.6.2
-make -j$(nproc) && make check
+make && make check
 make install
 install -v -m644 doc/*.{html,css} /usr/share/doc/expat-2.6.2
 cd /sources
@@ -749,7 +749,7 @@ sed -i 's/def HAVE_TERMCAP_TGETENT/ 1/' telnet/telnet.c
             --disable-rlogin     \
             --disable-rsh        \
             --disable-servers
-make -j$(nproc) && make check
+make && make check
 make install
 mv -v /usr/{,s}bin/ifconfig
 cd /sources
@@ -757,7 +757,7 @@ cd /sources
 # Less
 tar -xvzf less*.tar.gz && cd less*/
 ./configure --prefix=/usr --sysconfdir=/etc
-make -j$(nproc) && make check
+make && make check
 make install
 cd /sources
 
@@ -779,7 +779,7 @@ sh Configure -des                                          \
              -D pager="/usr/bin/less -isR"                 \
              -D useshrplib                                 \
              -D usethreads
-make -j$(nproc) 
+make 
 TEST_JOBS=$(nproc) make test_harness
 make install
 unset BUILD_ZLIB BUILD_BZIP2
@@ -788,7 +788,7 @@ cd /sources
 # Xml-Parser
 tar -xvzf XML-Parser*.tar.gz && cd XML-Parser*/
 perl Makefile.PL
-make -j$(nproc) && make test
+make && make test
 make install
 cd /sources
 
@@ -796,7 +796,7 @@ cd /sources
 tar -xvzf intltool*.tar.gz && cd intltool*/
 sed -i 's:\\\${:\\\$\\{:' intltool-update.in
 ./configure --prefix=/usr
-make -j$(nproc) && make check
+make && make check
 make install
 install -v -Dm644 doc/I18N-HOWTO /usr/share/doc/intltool-0.51.0/I18N-HOWTO
 cd /sources
@@ -804,14 +804,14 @@ cd /sources
 # Autoconf
 tar -xvJf autoconf*.tar.xz && cd autoconf*/
 ./configure --prefix=/usr
-make -j$(nproc) && make check
+make && make check
 make install
 cd /sources
 
 # Automake
 tar -xvJf automake*.tar.xz && cd automake*/
 ./configure --prefix=/usr --docdir=/usr/share/doc/automake-1.17
-make -j$(nproc) && make -j$(($(nproc)>4?$(nproc):4)) check
+make && make -j$(($(nproc)>4?$(nproc):4)) check
 make install
 cd /sources
 
@@ -822,7 +822,7 @@ tar -xvzf openssl*.tar.gz && cd openssl*/
          --libdir=lib          \
          shared                \
          zlib-dynamic
-make -j$(nproc) && HARNESS_JOBS=$(nproc) make test
+make && HARNESS_JOBS=$(nproc) make test
 sed -i '/INSTALL_LIBS/s/libcrypto.a libssl.a//' Makefile
 make MANSUFFIX=ssl install
 mv -v /usr/share/doc/openssl /usr/share/doc/openssl-3.3.1
@@ -838,7 +838,7 @@ tar -xvJf kmod*.tar.xz && cd kmod*/
             --with-zstd       \
             --with-zlib       \
             --disable-manpages
-make -j$(nproc) && make install
+make && make install
 
 for target in depmod insmod modinfo modprobe rmmod; do
   	ln -sfv ../bin/kmod /usr/sbin/$target
@@ -851,7 +851,7 @@ tar -xvjf elfutils*.tar.bz2 && cd elfutils*/
 ./configure --prefix=/usr                \
             --disable-debuginfod         \
             --enable-libdebuginfod=dummy
-make -j$(nproc) && make check
+make && make check
 make -C libelf install
 install -vm644 config/libelf.pc /usr/lib/pkgconfig
 rm /usr/lib/libelf.a
@@ -862,7 +862,7 @@ tar -xvzf libffi*.tar.gz && cd libffi*/
 /configure --prefix=/usr          \
             --disable-static       \
             --with-gcc-arch=native
-make -j$(nproc) && make check
+make && make check
 make install
 cd /sources
 
@@ -872,7 +872,7 @@ tar -xvJf Python*.tar.xz && cd Python*/
             --enable-shared      \
             --with-system-expat  \
             --enable-optimizations
-make -j$(nproc) && make test TESTOPTS="--timeout 120"
+make && make test TESTOPTS="--timeout 120"
 make install
 cat > /etc/pip.conf << "PIP"
 [global]
@@ -934,7 +934,7 @@ autoreconf -fiv
 FORCE_UNSAFE_CONFIGURE=1 ./configure \
             --prefix=/usr            \
             --enable-no-install-program=kill,uptime
-make -j$(nproc) && make NON_ROOT_USERNAME=tester check-root
+make && make NON_ROOT_USERNAME=tester check-root
 groupadd -g 102 dummy -U tester
 chown -R tester . 
 su tester -c "PATH=$PATH make -k RUN_EXPENSIVE_TESTS=yes check" \
@@ -949,14 +949,14 @@ cd /sources
 # Check
 tar -xvzf check*.tar.gz & cd check*/
 /configure --prefix=/usr --disable-static
-make -j$(nproc) && make check
+make && make check
 make docdir=/usr/share/doc/check-0.15.2 install
 cd /sources
 
 # Diffutils
 tar -xvJf diffutils*.tar.xz && cd diffutils*/
 ./configure --prefix=/usr
-make -j$(nproc) && make check
+make && make check
 make install
 cd /sources
 
@@ -964,7 +964,7 @@ cd /sources
 tar -xvJf gawk*.tar.xz && cd gawk*/
 sed -i 's/extras//' Makefile.in
 ./configure --prefix=/usr
-make -j$(nproc)
+make
 chown -R tester .
 su tester -c "PATH=$PATH make check"
 rm -f /usr/bin/gawk-5.3.0
@@ -983,14 +983,14 @@ cd /sources
 # Groff
 tar -xvzf groff*.tar.gz && cd groff*/
 PAGE=<paper_size> ./configure --prefix=/usr
-make -j$(nproc) && make check
+make && make check
 make install
 cd /sources
    
 # Gzip
 tar -xvJf gzip*.tar.xz && cd gzip*/
 ./configure --prefix=/usr
-make -j$(nproc) && make check
+make && make check
 make install
 cd /sources
 
@@ -998,7 +998,7 @@ cd /sources
 tar -xvJf iproute2*.tar.xz && cd iproute2*/
 sed -i /ARPD/d Makefile
 rm -fv man/man8/arpd.8
-make -j$(nproc) NETNS_RUN_DIR=/run/netns && make SBINDIR=/usr/sbin install
+make NETNS_RUN_DIR=/run/netns && make SBINDIR=/usr/sbin install
 mkdir -pv /usr/share/doc/iproute2-6.10.0
 cp -v COPYING README* /usr/share/doc/iproute2-6.10.0
 cd /sources
@@ -1009,7 +1009,7 @@ patch -Np1 -i ../kbd*.patch
 sed -i '/RESIZECONS_PROGS=/s/yes/no/' configure
 sed -i 's/resizecons.8 //' docs/man/man8/Makefile.in
 ./configure --prefix=/usr --disable-vlock
-make -j$(nproc) && make check
+make && make check
 make install
 cp -R -v docs/doc -T /usr/share/doc/kbd-2.6.4
 cd /sources
@@ -1017,14 +1017,14 @@ cd /sources
 # Libpipeline
 tar -xvzf libpipeline*.tar.gz && cd libpipeline*/
 ./configure --prefix=/usr
-make -j$(nproc) && make check
+make && make check
 make install
 cd /sources
 
 # Make
 tar -xvzf make*.tar.gz && cd make*/
 ./configure --prefix=/usr
-make -j$(nproc)
+make
 chown -R tester .
 su tester -c "PATH=$PATH make check"
 make install
@@ -1033,7 +1033,7 @@ cd /sources
 # Patch
 tar -xvJf patch*.tar.xz && cd patch*/
 ./configure --prefix=/usr
-make -j$(nproc) && make check
+make && make check
 make install
 cd /sources
 
@@ -1041,14 +1041,14 @@ cd /sources
 tar -xvJf tar*.tar.xz && cd tar*/
 FORCE_UNSAFE_CONFIGURE=1  \
 ./configure --prefix=/usr
-make -j$(nproc) && make check
+make && make check
 make install && make -C doc install-html docdir=/usr/share/doc/tar-1.35
 cd /sources
 
 # Texinfo
 tar -xvJf texinfo*.tar.xz && cd texinfo*/
 ./configure --prefix=/usr
-make -j$(nproc) && make check
+make && make check
 make install && make TEXMF=/usr/share/texmf install-tex
 cd /sources
 
@@ -1056,7 +1056,7 @@ cd /sources
 tar -xvzf vim*.tar.gz && cd vim*/
 echo '#define SYS_VIMRC_FILE "/etc/vimrc"' >> src/feature.h
 ./configure --prefix=/usr
-make -j$(nproc)
+make
 chown -R tester .
 su tester -c "TERM=xterm-256color LANG=en_US.UTF-8 make -j1 test" \
    &> vim-test.log
@@ -1165,7 +1165,7 @@ tar -xvJf man-db*.tar.xz && cd man-db*/
             --with-grap=/usr/bin/grap             \
             --with-systemdtmpfilesdir=            \
             --with-systemdsystemunitdir=
-make -j$(nproc) && make check
+make && make check
 make install
 cd /sources
 
@@ -1201,7 +1201,7 @@ tar -xvJf util-linux*.tar.xz && cd util-linux*/
             --without-systemdsystemunitdir        \
             ADJTIME_PATH=/var/lib/hwclock/adjtime \
             --docdir=/usr/share/doc/util-linux-2.40.2
-make -j$(nproc)
+make
 touch /etc/fstab
 chown -R tester .
 su tester -c "make -k check"
@@ -1218,7 +1218,7 @@ mkdir -v build && cd build
              --disable-libuuid       \
              --disable-uuidd         \
              --disable-fsck
-make -j$(nproc) && make check
+make && make check
 make install
 rm -fv /usr/lib/{libcom_err,libe2p,libext2fs,libss}.a
 gunzip -v /usr/share/info/libext2fs.info.gz
@@ -1235,7 +1235,7 @@ tar -xvzf sysklogd*.tar.gz && cd sysklogd*/
             --sysconfdir=/etc  \
             --runstatedir=/run \
             --without-logger
-make -j$(nproc) && make install
+make && make install
 cat > /etc/syslog.conf << "SYSLOG"
 auth,authpriv.* -/var/log/auth.log
 *.*;auth,authpriv.none -/var/log/sys.log
@@ -1251,7 +1251,7 @@ cd /sources
 # Sysvinit
 tar -xvJf sysvinit*.tar.xz && cd sysvinit*/
 patch -Np1 -i ../sysvinit*.patch
-make -j$(nproc) && make install
+make && make install
 cd /sources
 
 rm -rf /tmp/{*,.*}
@@ -1467,6 +1467,7 @@ for DRM in CONFIG_DRM_NOUVEAU=y CONFIG_DRM_AMDGPU=y CONFIG_DRM_I915=y; do
 done
 # Add static configurations
 static_configs=(
+    "CONFIG_FUSE_FS=y"
     "CONFIG_PSI=y"
     "CONFIG_MEMCG=y"
     "CONFIG_DRM_FBDEV_EMULATION=y"
@@ -1482,7 +1483,7 @@ for config in "${static_configs[@]}"; do
     sed -i "/^${config%=*}/d" .config
     echo "$config" >> .config
 done
-make -j$(nproc) && make modules_install
+make && make modules_install
 mount /boot
 cp -iv arch/x86/boot/bzImage /boot/vmlinuz-6.10.5-lfs-12.2
 cp -iv System.map /boot/System.map-6.10.5
@@ -1628,7 +1629,7 @@ menuentry "Firmware Setup" {
 }
 CFG
 
-echo 12.2 > /etc/lfs-release
+echo "12.2" > /etc/lfs-release
 
 cat > /etc/lsb-release << "LSBREL"
 DISTRIB_ID="LazyOS"
@@ -1845,51 +1846,64 @@ cd /sources
 # Bedrocking
 read -p "Do you want to install bedrock linux? [y/N]: " bedrock_choice
 if [[ "$bedrock_choice" == "y" ]]; then
-	wget https://github.com/bedrocklinux/bedrocklinux-userland/releases/download/0.7.30/bedrock-linux-0.7.30-x86_64.sh --directory-prefix=/sources
-	sh ./bedrock-linux* --hijack 
-	
-	# Check if Bedrock's `brl` is available
-	if ! command -v brl &>/dev/null; then
-	  echo "Bedrock's brl command not found. Please ensure Bedrock is installed." >&2
-	  exit 1
-	fi
-	
-	# Check if an Arch stratum exists
-	if ! brl list | grep -q arch; then
-	  echo "No Arch Linux stratum found. Adding Arch Linux stratum..."
-	  brl fetch arch || { echo "Failed to add Arch Linux stratum."; exit 1; }
-	fi
-	
-	# Ensure pacman is available
-	if ! command -v pacman &>/dev/null; then
-	  echo "Pacman is not available. Ensure your Arch Linux stratum is working properly." >&2
-	  exit 1
-	fi
-	
-	# Update package database
-	echo "Updating pacman package database..."
-	pacman -Sy || { echo "Failed to update pacman package database."; exit 1; }
+    wget https://github.com/libfuse/libfuse/releases/download/fuse-3.16.2/fuse-3.16.2.tar.gz
+    tar -xvf fuse-3.16.2.tar.xz && cd fuse*/
+    mkdir build && cd build
+    meson setup
+    cd /sources
 
-	# Determine CPU type and install appropriate microcode
-	CPU_VENDOR=$(grep -m 1 "vendor_id" /proc/cpuinfo | awk '{print $3}')
-	case $CPU_VENDOR in
-	  GenuineIntel)
+    wget https://gnupg.org/ftp/gcrypt/gnupg/gnupg-2.4.6.tar.bz2
+    tar -xvf gnupg-2.4.6.tar.bz2 && cd gnupg-2.4.6
+    ./configure --prefix=/usr --sysconfdir=/etc
+    make && make install
+    gpg --full-generate-key
+    cd /sources
+
+    wget https://github.com/bedrocklinux/bedrocklinux-userland/releases/download/0.7.30/bedrock-linux-0.7.30-x86_64.sh --directory-prefix=/sources
+    sh ./bedrock-linux* --hijack 
+	
+    # Check if Bedrock's `brl` is available
+    if ! command -v brl &>/dev/null; then
+	echo "Bedrock's brl command not found. Please ensure Bedrock is installed." >&2
+	exit 1
+    fi
+	
+    # Check if an Arch stratum exists
+    if ! brl list | grep -q arch; then
+	echo "No Arch Linux stratum found. Adding Arch Linux stratum..."
+	brl fetch arch || { echo "Failed to add Arch Linux stratum."; exit 1; }
+    fi
+	
+    # Ensure pacman is available
+    if ! command -v pacman &>/dev/null; then
+	echo "Pacman is not available. Ensure your Arch Linux stratum is working properly." >&2
+	exit 1
+    fi
+	
+    # Update package database
+    echo "Updating pacman package database..."
+    pacman -Sy || { echo "Failed to update pacman package database."; exit 1; }
+
+    # Determine CPU type and install appropriate microcode
+    CPU_VENDOR=$(grep -m 1 "vendor_id" /proc/cpuinfo | awk '{print $3}')
+    case $CPU_VENDOR in
+        GenuineIntel)
 	    echo "Intel CPU detected. Installing intel-ucode..."
 	    pacman -S --noconfirm intel-ucode || { echo "Failed to install intel-ucode."; exit 1; }
 	    MICROCODE_PATH="/boot/intel-ucode.img"
 	    ;;
-	  AuthenticAMD)
+	AuthenticAMD)
 	    echo "AMD CPU detected. Installing amd-ucode..."
 	    pacman -S --noconfirm amd-ucode || { echo "Failed to install amd-ucode."; exit 1; }
 	    MICROCODE_PATH="/boot/amd-ucode.img"
 	    ;;
-	  *)
+	*)
 	    echo "Unknown CPU vendor: $CPU_VENDOR. Exiting." >&2
 	    exit 1
 	    ;;
 	esac
 else
-	echo "Skipping bedrock installation..."
+    echo "Skipping bedrock installation..."
 fi
 
 # Update GRUB configuration
@@ -1897,7 +1911,7 @@ if [[ -f /etc/default/grub ]]; then
     echo "Updating GRUB configuration..."
     GRUB_CMDLINE=$(grep "^GRUB_CMDLINE_LINUX" /etc/default/grub)
     if ! echo "$GRUB_CMDLINE" | grep -q "$MICROCODE_PATH"; then
-      sed -i "/^GRUB_CMDLINE_LINUX/s|\"$| ${MICROCODE_PATH}\"|" /etc/default/grub
+        sed -i "/^GRUB_CMDLINE_LINUX/s|\"$| ${MICROCODE_PATH}\"|" /etc/default/grub
     fi
     grub-mkconfig -o /boot/grub/grub.cfg || { echo "Failed to update GRUB configuration."; exit 1; }
 else
