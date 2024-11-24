@@ -2365,13 +2365,13 @@ cd /sources
 
 # Xorg input drivers
 wget https://github.com/linuxwacom/xf86-input-wacom/releases/download/xf86-input-wacom-1.2.2/xf86-input-wacom-1.2.2.tar.bz2
-tar -xvjf xf86-input-wacom-1.2.2.tar.bz2 && cd xf86-input-wacom-1.2.2
+tar -xvjf xf86-input-wacom-1.2.2.tar.bz2 && cd xf86-input-wacom-1.2.2/
 ./configure $XORG_CONFIG --with-systemd-unit-dir=no &&
 make && make install
 cd ./sources
 
 wget https://gitlab.freedesktop.org/libinput/libinput/-/archive/1.26.1/libinput-1.26.1.tar.gz
-tar -xvzf libinput-1.26.1.tar.gz && cd libinput-1.26.1
+tar -xvzf libinput-1.26.1.tar.gz && cd libinput-1.26.1/
 mkdir build && cd build
 meson setup ..                  \
       --prefix=$XORG_PREFIX     \
@@ -2390,17 +2390,36 @@ make && make install
 cd /sources
 
 wget https://www.x.org/pub/individual/driver/xf86-input-synaptics-1.9.2.tar.xz
-tar -xvJf xf86-input-synaptics-1.9.2.tar.xz && cd xf86-input-synaptics-1.9.2
+tar -xvJf xf86-input-synaptics-1.9.2.tar.xz && cd xf86-input-synaptics-1.9.2/
 ./configure $XORG_CONFIG &&
 make && make install
 cd /sources
 
 # Twm
 wget https://www.x.org/pub/individual/app/twm-1.0.12.tar.xz
-tar -xvJf twm-1.0.12.tar.xz && twm-1.0.12.tar.xz
+tar -xvJf twm-1.0.12.tar.xz && cd twm-1.0.12/
 sed -i -e '/^rcdir =/s,^\(rcdir = \).*,\1/etc/X11/app-defaults,' src/Makefile.in &&
 ./configure $XORG_CONFIG &&
 make && make install
+cd /sources
+
+# Xterm
+wget https://kumisystems.dl.sourceforge.net/project/dejavu/dejavu/2.37/dejavu-fonts-ttf-2.37.tar.bz2?viasf=1
+tar -xvjf dejavu-fonts-ttf-2.37.tar.bz2 && cd dejavu-fonts-ttf-2.37/
+install -v -d -m755 /usr/share/fonts/dejavu &&
+install -v -m644 ttf/*.ttf /usr/share/fonts/dejavu &&
+fc-cache -v /usr/share/fonts/dejavu
+cd /sources
+wget https://invisible-mirror.net/archives/xterm/xterm-393.tgz
+tar -xvzf xterm-393.tgz && cd xterm-393.tgz/
+sed -i '/v0/{n;s/new:/new:kb=^?:/}' termcap &&
+printf '\tkbs=\\177,\n' >> terminfo &&
+TERMINFO=/usr/share/terminfo \
+./configure $XORG_CONFIG     \
+    --with-app-defaults=/etc/X11/app-defaults &&
+make && make install
+mkdir -pv /usr/share/applications &&
+cp -v *.desktop /usr/share/applications/
 cd /sources
 
 # Bedrocking
