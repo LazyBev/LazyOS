@@ -260,8 +260,7 @@ tar -xf ../../tzdata2024a.tar.gz
 ZONEINFO=/usr/share/zoneinfo
 mkdir -pv $ZONEINFO/{posix,right}
 
-for tz in etcetera southamerica northamerica europe africa antarctica  \
-          asia australasia backward; do
+for tz in etcetera southamerica northamerica europe africa antarctica asia australasia backward; do
 	zic -L /dev/null   -d $ZONEINFO       ${tz}
     zic -L /dev/null   -d $ZONEINFO/posix ${tz}
     zic -L leapseconds -d $ZONEINFO/right ${tz}
@@ -305,7 +304,7 @@ cp -av libbz2.so.* /usr/lib
 ln -sv libbz2.so.1.0.8 /usr/lib/libbz2.so
 cp -v bzip2-shared /usr/bin/bzip2
 for i in /usr/bin/{bzcat,bunzip2}; do
-	ln -sfv bzip2 $i
+    ln -sfv bzip2 $i
 done
 rm -fv /usr/lib/libbz2.a
 cd /sources
@@ -372,8 +371,7 @@ cd /sources
 
 # Tcl
 tar -xvzf tcl*src.tar.gz && cd tcl*/
-SRCDIR=$(pwd)
-cd unix
+SRCDIR=$(pwd) && cd unix
 ./configure --prefix=/usr           \
             --mandir=/usr/share/man \
             --disable-rpath
@@ -400,8 +398,7 @@ chmod -v u+w /usr/lib/libtcl8.6.so
 make install-private-headers
 ln -sfv tclsh8.6 /usr/bin/tclsh     
 mv /usr/share/man/man3/{Thread,Tcl_Thread}.3
-cd ..
-tar -xf ../tcl8.6.14-html.tar.gz --strip-components=1
+cd .. && tar -xf ../tcl8.6.14-html.tar.gz --strip-components=1
 mkdir -v -p /usr/share/doc/tcl-8.6.14
 cp -v -r  ./html/* /usr/share/doc/tcl-8.6.14
 cd /sources
@@ -425,20 +422,20 @@ tar -xvzf dejagnu*.tar.gz && cd dejagnu*/
 mkdir -v build && cd build
 ../configure --prefix=/usr
 makeinfo --html --no-split -o doc/dejagnu.html ../doc/dejagnu.texi
-makeinfo --plaintext       -o doc/dejagnu.txt  ../doc/dejagnu.texi
+makeinfo --plaintext -o doc/dejagnu.txt  ../doc/dejagnu.texi
 make check && make install
 install -v -dm755  /usr/share/doc/dejagnu-1.6.3
-install -v -m644   doc/dejagnu.{html,txt} /usr/share/doc/dejagnu-1.6.3
+install -v -m644 doc/dejagnu.{html,txt} /usr/share/doc/dejagnu-1.6.3
 rm -rf build
 cd /sources
 
 # Pkgconf
 tar -xvJf pkgconf*.tar.xz && cd pkgconf*/
-./configure --prefix=/usr              \
-            --disable-static           \
+./configure --prefix=/usr \
+            --disable-static \
             --docdir=/usr/share/doc/pkgconf-2.3.0
 make && make install
-ln -sv pkgconf   /usr/bin/pkg-config
+ln -sv pkgconf /usr/bin/pkg-config
 ln -sv pkgconf.1 /usr/share/man/man1/pkg-config.1
 cd /sources
 
@@ -539,9 +536,9 @@ cd /sources
 # Shadow
 tar -xvJf shadow*.tar.xz && cd shadow*/
 sed -i 's/groups$(EXEEXT) //' src/Makefile.in
-find man -name Makefile.in -exec sed -i 's/groups\.1 / /'   {} \;
+find man -name Makefile.in -exec sed -i 's/groups\.1 / /' {} \;
 find man -name Makefile.in -exec sed -i 's/getspnam\.3 / /' {} \;
-find man -name Makefile.in -exec sed -i 's/passwd\.5 / /'   {} \;
+find man -name Makefile.in -exec sed -i 's/passwd\.5 / /' {} \;
 sed -i 's:DICTPATH.*:DICTPATH\t/lib/cracklib/pw_dict:' etc/login.defs
 touch /usr/bin/passwd
 ./configure --sysconfdir=/etc   \
@@ -560,10 +557,9 @@ cd /sources
 # Gcc
 tar -xvJf gcc*.tar.xz && cd gcc*/
 case $(uname -m) in
-	x86_64)
-    	sed -e '/m64=/s/lib64/lib/' \
-        	-i.orig gcc/config/i386/t-linux64
-  	;;
+    x86_64)
+    sed -e '/m64=/s/lib64/lib/' -i.orig gcc/config/i386/t-linux64
+    ;;
 esac
 mkdir -v build && cd build
 ../configure --prefix=/usr            \
@@ -576,23 +572,19 @@ mkdir -v build && cd build
              --disable-bootstrap      \
              --disable-fixincludes    \
              --with-system-zlib
-make
-ulimit -s -H unlimited
-sed -e '/cpython/d'               -i ../gcc/testsuite/gcc.dg/plugin/plugin.exp
-sed -e 's/no-pic /&-no-pie /'     -i ../gcc/testsuite/gcc.target/i386/pr113689-1.c
-sed -e 's/300000/(1|300000)/'     -i ../libgomp/testsuite/libgomp.c-c++-common/pr109062.c
-sed -e 's/{ target nonpic } //' \
-    -e '/GOTPCREL/d'              -i ../gcc/testsuite/gcc.target/i386/fentryname3.c
+make && ulimit -s -H unlimited
+sed -e '/cpython/d' -i ../gcc/testsuite/gcc.dg/plugin/plugin.exp
+sed -e 's/no-pic /&-no-pie /' -i ../gcc/testsuite/gcc.target/i386/pr113689-1.c
+sed -e 's/300000/(1|300000)/' -i ../libgomp/testsuite/libgomp.c-c++-common/pr109062.c
+sed -e 's/{ target nonpic } //' -e '/GOTPCREL/d' -i ../gcc/testsuite/gcc.target/i386/fentryname3.c
 chown -R tester .
 su tester -c "PATH=$PATH make -k check"
 ../contrib/test_summary
 make install
-chown -v -R root:root \
-    /usr/lib/gcc/$(gcc -dumpmachine)/14.2.0/include{,-fixed}
+chown -v -R root:root /usr/lib/gcc/$(gcc -dumpmachine)/14.2.0/include{,-fixed}
 ln -svr /usr/bin/cpp /usr/lib
 ln -sv gcc.1 /usr/share/man/man1/cc.1
-ln -sfv ../../libexec/gcc/$(gcc -dumpmachine)/14.2.0/liblto_plugin.so \
-        /usr/lib/bfd-plugins/
+ln -sfv ../../libexec/gcc/$(gcc -dumpmachine)/14.2.0/liblto_plugin.so /usr/lib/bfd-plugins/
 echo 'int main(){}' > dummy.c
 cc dummy.c -v -Wl,--verbose &> dummy.log
 readelf -l a.out | grep ': /lib'
@@ -619,8 +611,7 @@ tar -xvzf ncurses*.tar.gz && cd ncurses*/
 make && make DESTDIR=$PWD/dest install
 install -vm755 dest/usr/lib/libncursesw.so.6.5 /usr/lib
 rm -v  dest/usr/lib/libncursesw.so.6.5
-sed -e 's/^#if.*XOPEN.*$/#if 1/' \
-    -i dest/usr/include/curses.h
+sed -e 's/^#if.*XOPEN.*$/#if 1/' -i dest/usr/include/curses.h
 cp -av dest/* /
 for lib in ncurses form panel menu ; do
     ln -sfv lib${lib}w.so /usr/lib/lib${lib}.so
@@ -646,7 +637,7 @@ make && make html
 chown -R tester .
 su tester -c "PATH=$PATH make check"
 make install
-install -d -m755           /usr/share/doc/sed-4.9
+install -d -m755 /usr/share/doc/sed-4.9
 install -m644 doc/sed.html /usr/share/doc/sed-4.9
 cd /sources
 
@@ -695,8 +686,8 @@ set timeout -1
 spawn make tests
 expect eof
 lassign [wait] _ _ _ value
-exit $value
-TEST
+exit $value 
+EST
 make install
 exec /usr/bin/bash --login
 cd /sources
@@ -778,8 +769,7 @@ sh Configure -des                                          \
              -D pager="/usr/bin/less -isR"                 \
              -D useshrplib                                 \
              -D usethreads
-make 
-TEST_JOBS=$(nproc) make test_harness
+make && TEST_JOBS=$(nproc) make test_harness
 make install
 unset BUILD_ZLIB BUILD_BZIP2
 cd /sources
@@ -840,8 +830,8 @@ tar -xvJf kmod*.tar.xz && cd kmod*/
 make && make install
 
 for target in depmod insmod modinfo modprobe rmmod; do
-  	ln -sfv ../bin/kmod /usr/sbin/$target
-  	rm -fv /usr/bin/$target
+    ln -sfv ../bin/kmod /usr/sbin/$target
+    rm -fv /usr/bin/$target
 done
 cd /sources
 
@@ -876,13 +866,11 @@ make install
 cat > /etc/pip.conf << "PIP"
 [global]
 root-user-action = ignore
-disable-pip-version-check = true
+disable-pip-version-check = true 
 PIP
 install -v -dm755 /usr/share/doc/python-3.12.5/html
-tar --no-same-owner \
-    -xvf ../python-3.12.5-docs-html.tar.bz2
-cp -R --no-preserve=mode python-3.12.5-docs-html/* \
-    /usr/share/doc/python-3.12.5/html
+tar --no-same-owner -xvf ../python-3.12.5-docs-html.tar.bz2
+cp -R --no-preserve=mode python-3.12.5-docs-html/* /usr/share/doc/python-3.12.5/html
 cd /sources
 
 # Flit
@@ -930,17 +918,13 @@ cd /sources
 tar -xvJf coreutils*.tar.xz && cd coreutils*/
 patch -Np1 -i ../coreutils*.patch
 autoreconf -fiv
-FORCE_UNSAFE_CONFIGURE=1 ./configure \
-            --prefix=/usr            \
-            --enable-no-install-program=kill,uptime
+FORCE_UNSAFE_CONFIGURE=1 ./configure --prefix=/usr --enable-no-install-program=kill,uptime
 make && make NON_ROOT_USERNAME=tester check-root
 groupadd -g 102 dummy -U tester
 chown -R tester . 
-su tester -c "PATH=$PATH make -k RUN_EXPENSIVE_TESTS=yes check" \
-   < /dev/null
+su tester -c "PATH=$PATH make -k RUN_EXPENSIVE_TESTS=yes check" < /dev/null
 groupdel dummy
-make install
-mv -v /usr/bin/chroot /usr/sbin
+make install && mv -v /usr/bin/chroot /usr/sbin
 mv -v /usr/share/man/man1/chroot.1 /usr/share/man/man8/chroot.8
 sed -i 's/"1"/"8"/' /usr/share/man/man8/chroot.8
 cd /sources
@@ -1023,8 +1007,7 @@ cd /sources
 # Make
 tar -xvzf make*.tar.gz && cd make*/
 ./configure --prefix=/usr
-make
-chown -R tester .
+make && chown -R tester .
 su tester -c "PATH=$PATH make check"
 make install
 cd /sources
@@ -1055,10 +1038,8 @@ cd /sources
 tar -xvzf vim*.tar.gz && cd vim*/
 echo '#define SYS_VIMRC_FILE "/etc/vimrc"' >> src/feature.h
 ./configure --prefix=/usr
-make
-chown -R tester .
-su tester -c "TERM=xterm-256color LANG=en_US.UTF-8 make -j1 test" \
-   &> vim-test.log
+make && chown -R tester .
+su tester -c "TERM=xterm-256color LANG=en_US.UTF-8 make -j1 test"  &> vim-test.log
 ln -sv vim /usr/bin/vi
 for L in  /usr/share/man/{,*/}man1/vim.1; do
     ln -sv vim.1 $(dirname $L)/vi.1
@@ -1074,7 +1055,7 @@ set backspace=2
 set mouse=
 syntax on
 if (&term == "xterm") || (&term == "putty")
-  set background=dark
+    set background=dark
 endif
 RC
 cd /sources
@@ -1093,8 +1074,7 @@ cd /sources
 
 # Udev
 tar -xvzf systemd*.tar.gz && cd systemd*/
-sed -i -e 's/GROUP="render"/GROUP="video"/' \
-       -e 's/GROUP="sgx", //' rules.d/50-udev-default.rules.in
+sed -i -e 's/GROUP="render"/GROUP="video"/' -e 's/GROUP="sgx", //' rules.d/50-udev-default.rules.in
 sed '/systemd-sysctl/s/^/#/' -i rules.d/99-systemd.rules.in
 sed '/NETWORK_DIRS/s/systemd/udev/' -i src/basic/path-lookup.h
 mkdir -p build && cd build
@@ -1106,50 +1086,38 @@ meson setup ..                  \
       -D link-udev-shared=false \
       -D logind=false           \
       -D vconsole=false
-export udev_helpers=$(grep "'name' :" ../src/udev/meson.build | \
-                      awk '{print $3}' | tr -d ",'" | grep -v 'udevadm')
+export udev_helpers=$(grep "'name' :" ../src/udev/meson.build |  awk '{print $3}' | tr -d ",'" | grep -v 'udevadm')
 ninja udevadm systemd-hwdb                                           \
       $(ninja -n | grep -Eo '(src/(lib)?udev|rules.d|hwdb.d)/[^ ]*') \
       $(realpath libudev.so --relative-to .)                         \
       $udev_helpers
 install -vm755 -d {/usr/lib,/etc}/udev/{hwdb.d,rules.d,network}
 install -vm755 -d /usr/{lib,share}/pkgconfig
-install -vm755 udevadm                             /usr/bin/
-install -vm755 systemd-hwdb                        /usr/bin/udev-hwdb
-ln      -svfn  ../bin/udevadm                      /usr/sbin/udevd
-cp      -av    libudev.so{,*[0-9]}                 /usr/lib/
-install -vm644 ../src/libudev/libudev.h            /usr/include/
-install -vm644 src/libudev/*.pc                    /usr/lib/pkgconfig/
-install -vm644 src/udev/*.pc                       /usr/share/pkgconfig/
-install -vm644 ../src/udev/udev.conf               /etc/udev/
-install -vm644 rules.d/* ../rules.d/README         /usr/lib/udev/rules.d/
-install -vm644 $(find ../rules.d/*.rules \
-                      -not -name '*power-switch*') /usr/lib/udev/rules.d/
+install -vm755 udevadm /usr/bin/
+install -vm755 systemd-hwdb /usr/bin/udev-hwdb
+ln -svfn ../bin/udevadm /usr/sbin/udevd
+cp -av libudev.so{,*[0-9]} /usr/lib/
+install -vm644 ../src/libudev/libudev.h /usr/include/
+install -vm644 src/libudev/*.pc /usr/lib/pkgconfig/
+install -vm644 src/udev/*.pc /usr/share/pkgconfig/
+install -vm644 ../src/udev/udev.conf /etc/udev/
+install -vm644 rules.d/* ../rules.d/README /usr/lib/udev/rules.d/
+install -vm644 $(find ../rules.d/*.rules -not -name '*power-switch*') /usr/lib/udev/rules.d/
 install -vm644 hwdb.d/*  ../hwdb.d/{*.hwdb,README} /usr/lib/udev/hwdb.d/
-install -vm755 $udev_helpers                       /usr/lib/udev
-install -vm644 ../network/99-default.link          /usr/lib/udev/network
+install -vm755 $udev_helpers /usr/lib/udev
+install -vm644 ../network/99-default.link /usr/lib/udev/network
 tar -xvf ../../udev-lfs-20230818.tar.xz
 make -f udev-lfs-20230818/Makefile.lfs install
-tar -xf ../../systemd-man-pages-256.4.tar.xz                            \
-    --no-same-owner --strip-components=1                              \
-    -C /usr/share/man --wildcards '*/udev*' '*/libudev*'              \
-                                  '*/systemd.link.5'                  \
-                                  '*/systemd-'{hwdb,udevd.service}.8
+tar -xf ../../systemd-man-pages-256.4.tar.xz --no-same-owner --strip-components=1 \
+    -C /usr/share/man --wildcards '*/udev*' '*/libudev*' \
+    '*/systemd.link.5' \
+    '*/systemd-'{hwdb,udevd.service}.8
 
-sed 's|systemd/network|udev/network|'                                 \
-    /usr/share/man/man5/systemd.link.5                                \
-  > /usr/share/man/man5/udev.link.5
-
-sed 's/systemd\(\\\?-\)/udev\1/' /usr/share/man/man8/systemd-hwdb.8   \
-                               > /usr/share/man/man8/udev-hwdb.8
-
-sed 's|lib.*udevd|sbin/udevd|'                                        \
-    /usr/share/man/man8/systemd-udevd.service.8                       \
-  > /usr/share/man/man8/udevd.8
-
+sed 's|systemd/network|udev/network|' /usr/share/man/man5/systemd.link.5 > /usr/share/man/man5/udev.link.5
+sed 's/systemd\(\\\?-\)/udev\1/' /usr/share/man/man8/systemd-hwdb.8 > /usr/share/man/man8/udev-hwdb.8
+sed 's|lib.*udevd|sbin/udevd|' /usr/share/man/man8/systemd-udevd.service.8 > /usr/share/man/man8/udevd.8
 rm /usr/share/man/man*/systemd*
-unset udev_helpers
-udev-hwdb update
+unset udev_helpers && udev-hwdb update
 cd /sources
 
 # Man-db
@@ -1200,8 +1168,7 @@ tar -xvJf util-linux*.tar.xz && cd util-linux*/
             --without-systemdsystemunitdir        \
             ADJTIME_PATH=/var/lib/hwclock/adjtime \
             --docdir=/usr/share/doc/util-linux-2.40.2
-make
-touch /etc/fstab
+make && touch /etc/fstab
 chown -R tester .
 su tester -c "make -k check"
 make install
@@ -1284,9 +1251,7 @@ echo "GATEWAY=$GATEWAY"
 echo "PREFIX=$PREFIX"
 echo "BROADCAST=$BROADCAST"
 
-sed -e '/^AlternativeNamesPolicy/s/=.*$/=/'  \
-       /usr/lib/udev/network/99-default.link \
-     > /etc/udev/network/99-default.link
+sed -e '/^AlternativeNamesPolicy/s/=.*$/=/' /usr/lib/udev/network/99-default.link > /etc/udev/network/99-default.link
 
 cd /etc/sysconfig/
 cat > ifconfig.eth0 << "IFCONF"
@@ -1353,18 +1318,18 @@ read -p "What locale do you want: " loc && LC_ALL=$loc
 export locchar=$(locale charmap)
 
 if [[ "$loc" == *.* ]]; then
-	loc="${loc%%.*}"
+    loc="${loc%%.*}"
 fi
 
 cat > /etc/profile << "PROF"
 for i in $(locale); do
-  unset ${i%=*}
+    unset ${i%=*}
 done
 
 if [[ "$TERM" = linux ]]; then
-  export LANG=C.UTF-8
+    export LANG=C.UTF-8
 else
-  export LANG=$loc.$locchar
+    export LANG=$loc.$locchar
 fi
 PROF
 
@@ -1504,8 +1469,7 @@ cp -iv arch/x86/boot/bzImage /boot/vmlinuz-6.10.5-lfs-12.2
 cp -iv System.map /boot/System.map-6.10.5
 cp -iv .config /boot/config-6.10.5
 cp -r Documentation -T /usr/share/doc/linux-6.10.5
-chown -R 0:0
-install -v -m755 -d /etc/modprobe.d
+chown -R 0:0 && install -v -m755 -d /etc/modprobe.d
 cat > /etc/modprobe.d/usb.conf << "MODPROB"
 install ohci_hcd /sbin/modprobe ehci_hcd ; /sbin/modprobe -i ohci_hcd ; true
 install uhci_hcd /sbin/modprobe ehci_hcd ; /sbin/modprobe -i uhci_hcd ; true
@@ -1630,15 +1594,15 @@ set root=(hd0,2)
 insmod efi_gop
 insmod efi_uga
 if loadfont /boot/grub/fonts/unicode.pf2; then
-  terminal_output gfxterm
+    terminal_output gfxterm
 fi
 
 menuentry "GNU/Linux, Linux 6.10.5-lfs-12.2" {
-  linux   /boot/vmlinuz-6.10.5-lfs-12.2 root=/dev/sda2 ro
+    linux /boot/vmlinuz-6.10.5-lfs-12.2 root=/dev/sda2 ro
 }
 
 menuentry "Firmware Setup" {
-  fwsetup
+    fwsetup
 }
 CFG
 
@@ -1670,33 +1634,20 @@ cd /sources
 
 # Cpio
 tar -xvjf cpio*.tar.bz2 && cd cpio*/
-./configure --prefix=/usr \
-            --enable-mt   \
-            --with-rmt=/usr/libexec/rmt &&
-make &&
-makeinfo --html            -o doc/html      doc/cpio.texi &&
+./configure --prefix=/usr --enable-mt --with-rmt=/usr/libexec/rmt &&
+make && makeinfo --html -o doc/html doc/cpio.texi &&
 makeinfo --html --no-split -o doc/cpio.html doc/cpio.texi &&
-makeinfo --plaintext       -o doc/cpio.txt  doc/cpio.texi
-make install &&
-install -v -m755 -d /usr/share/doc/cpio-2.15/html &&
-install -v -m644    doc/html/* \
-                    /usr/share/doc/cpio-2.15/html &&
-install -v -m644    doc/cpio.{html,txt} \
-                    /usr/share/doc/cpio-2.15
+makeinfo --plaintext -o doc/cpio.txt  doc/cpio.texi
+make install && install -v -m755 -d /usr/share/doc/cpio-2.15/html &&
+install -v -m644 doc/html/* /usr/share/doc/cpio-2.15/html &&
+install -v -m644 doc/cpio.{html,txt} /usr/share/doc/cpio-2.15
 cd /sources
 
 # Pci utils
 tar -xvzf pciutils*.tar.gz && cd pciutils*/
-sed -r '/INSTALL/{/PCI_IDS|update-pciids /d; s/update-pciids.8//}' \
-    -i Makefile
-make PREFIX=/usr                \
-     SHAREDIR=/usr/share/hwdata \
-     SHARED=yes
-make PREFIX=/usr                \
-     SHAREDIR=/usr/share/hwdata \
-     SHARED=yes                 \
-     install install-lib        &&
-	 
+sed -r '/INSTALL/{/PCI_IDS|update-pciids /d; s/update-pciids.8//}' -i Makefile
+make PREFIX=/usr SHAREDIR=/usr/share/hwdata SHARED=yes
+make PREFIX=/usr SHAREDIR=/usr/share/hwdata SHARED=yes install install-lib
 chmod -v 755 /usr/lib/libpci.so
 cd /sources
 
@@ -1709,60 +1660,48 @@ cd /sources
 # DKMS
 git clone https://github.com/dell/dkms.git
 cd dkms && make install
-
-mkdir -p /usr/src
-mkdir -p /var/lib/dkms
-
+mkdir -p /usr/src && mkdir -p /var/lib/dkms
 export KERNELDIR=/usr/src/linux
 dkms autoinstall
 cd /sources
 
-# Audio
-PULSEAUDIO_VERSION="16.1"
-PULSEAUDIO_DIR="/sources/pulseaudio-${PULSEAUDIO_VERSION}"
-
-# Install GLib
+# GLib
 wget http://ftp.acc.umu.se/pub/GNOME/sources/glib/2.70/glib-2.70.0.tar.xz
-tar -xvJf glib-2.70.0.tar.xz
-cd glib-2.70.0
+tar -xvJf glib-*.tar.xz && cd glib-*/
 ./configure --prefix=/usr
 make && make install
 cd /sources
 
-# Install libxml2
+# Libxml2
 wget http://xmlsoft.org/sources/libxml2-2.9.10.tar.gz
-tar --xvzf libxml2-2.9.10.tar.gz
-cd libxml2-2.9.10
+tar --xvzf libxml2*.tar.gz && cd libxml2*/
 ./configure --prefix=/usr
 make && make install
 cd /sources
 
-# Install dbus
+# Dbus
 wget https://dbus.freedesktop.org/releases/dbus/dbus-1.12.16.tar.xz
-tar -xvJf dbus-1.12.16.tar.xz
-cd dbus-1.12.16
+tar -xvJf dbus*.tar.xz && cd dbus*/
 ./configure --prefix=/usr
 make && make install
 cd /sources
 
-# Install libsndfile
+# Libsndfile
 wget http://www.mega-nerd.com/SRC/libsndfile-1.0.31.tar.gz
-tar -xvzf libsndfile-1.0.31.tar.gz
-cd libsndfile-1.0.31
+tar -xvzf libsndfile*/.tar.gz && cd libsndfile*/
 ./configure --prefix=/usr
 make && make install
 cd /sources
 
-# Install libcap
+# Libcap
 wget https://github.com/avinoam/libcap/releases/download/v2.56/libcap-2.56.tar.xz
-tar -xvJf libcap-2.56.tar.xz
-cd libcap-2.56
+tar -xvJf libcap*/.tar.xz && cd libcap*/
 make && make install
 cd /sources
 
-wget https://www.freedesktop.org/software/pulseaudio/releases/pulseaudio-${PULSEAUDIO_VERSION}.tar.xz
-tar -xvJf pulseaudio-${PULSEAUDIO_VERSION}.tar.xz
-cd pulseaudio-${PULSEAUDIO_VERSION}
+# Pulseaudio
+wget https://www.freedesktop.org/software/pulseaudio/releases/pulseaudio-16.1.tar.xz
+tar -xvJf pulseaudio*.tar.xz && cd pulseaudio*/
 ./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var --disable-static --enable-shared
 make && make install
 cat > /etc/init.d/pulseaudio << 'PA'
@@ -1828,22 +1767,17 @@ chmod +x /etc/init.d/pulseaudio
 ln -s /etc/init.d/pulseaudio /etc/rc.d/rc3.d/S99pulseaudio
 cd /sources
 
-# PAM
+# Pam
 wget https://github.com/linux-pam/linux-pam/releases/download/v1.6.1/Linux-PAM-1.6.1-docs.tar.xz
 wget https://github.com/linux-pam/linux-pam/releases/download/v1.6.1/Linux-PAM-1.6.1.tar.xz
-tar -xvJf Linux-PAM-1.6.1.tar.xz && cd Linux-PAM-1.6.1/
-sed -e /service_DATA/d \
-    -i modules/pam_namespace/Makefile.am
+tar -xvJf Linux-PAM-*.tar.xz && cd Linux-PAM-*/
+sed -e /service_DATA/d -i modules/pam_namespace/Makefile.am
 autoreconf -fi
 tar -xvJf ../Linux-PAM-1.6.1-docs.tar.xz --strip-components=1
-./configure --prefix=/usr                        \
-            --sbindir=/usr/sbin                  \
-            --sysconfdir=/etc                    \
-            --libdir=/usr/lib                    \
+./configure --prefix=/usr --sbindir=/usr/sbin --sysconfdir=/etc --libdir=/usr/lib \
             --enable-securedir=/usr/lib/security \
             --docdir=/usr/share/doc/Linux-PAM-1.6.1 &&
-make
-install -v -m755 -d /etc/pam.d &&
+make && install -v -m755 -d /etc/pam.d &&
 
 cat > /etc/pam.d/other << "PAM"
 auth     required       pam_deny.so
@@ -1892,7 +1826,7 @@ cd /sources
 
 # Sudo
 wget https://www.sudo.ws/dist/sudo-1.9.15p5.tar.gz
-tar -xvzf sudo-1.9.15p5.tar.gz && cd sudo-1.9.15p5/
+tar -xvzf sudo-*.tar.gz && cd sudo-*/
 ./configure --prefix=/usr              \
             --libexecdir=/usr/lib      \
             --with-secure-path         \
@@ -1940,13 +1874,13 @@ cd /sources
 
 # Util-macros
 wget https://www.x.org/pub/individual/util/util-macros-1.20.1.tar.xz
-tar -xvJf util-macros-1.20.1.tar.xz && cd util-macros-1.20.1/
+tar -xvJf util-macros-*.tar.xz && cd util-macros-*/
 ./configure $XORG_CONFIG && make install
 cd /sources
 
 # Xorgproto
 wget https://xorg.freedesktop.org/archive/individual/proto/xorgproto-2024.1.tar.xz
-tar -xvJf xorgproto-2024.1.tar.xz && cd xorgproto-2024.1/
+tar -xvJf xorgproto-*.tar.xz && cd xorgproto-*/
 mkdir build && cd build
 meson setup --prefix=$XORG_PREFIX .. && ninja
 ninja install && mv -v $XORG_PREFIX/share/doc/xorgproto{,-2024.1}
@@ -1954,99 +1888,96 @@ cd /sources
 
 # LibXau
 wget https://www.x.org/pub/individual/lib/libXau-1.0.11.tar.xz
-tar -xvJf libXau-1.0.11.tar.xz && cd libXau-1.0.11/
+tar -xvJf libXau-*.tar.xz && cd libXau-*/
 ./configure $XORG_CONFIG &&
 make && make install
 cd /sources
 
 # libXdmcp
 wget https://www.x.org/pub/individual/lib/libXdmcp-1.1.5.tar.xz
-tar -xvJf libXdmcp-1.1.5.tar.xz && cd libXdcmp-1.1.5/
+tar -xvJf libXdmcp-*.tar.xz && cd libXdcmp-*/
 ./configure $XORG_CONFIG --docdir=/usr/share/doc/libXdmcp-1.1.5 &&
 make && make install
 cd /sources
 
 # Xcb-proto
 wget https://xorg.freedesktop.org/archive/individual/proto/xcb-proto-1.17.0.tar.xz
-tar -xvJf xcb-proto-1.17.0.tar.xz && cd xcb-proto-1.17.0/
+tar -xvJf xcb-proto-*.tar.xz && cd xcb-proto-*/
 PYTHON=python3 ./configure $XORG_CONFIG && make install
 cd /sources
 
 # Libxcb 
 wget https://xorg.freedesktop.org/archive/individual/lib/libxcb-1.17.0.tar.xz
-tar -xvJf libxcb-1.17.0.tar.xz && cd libxcb-1.17.0/
-./configure $XORG_CONFIG      \
-            --without-doxygen \
-            --docdir='${datadir}'/doc/libxcb-1.17.0 &&
-LC_ALL=en_US.UTF-8 make
-make install
+tar -xvJf libxcb-*.tar.xz && cd libxcb-*/
+./configure $XORG_CONFIG --without-doxygen --docdir='${datadir}'/doc/libxcb-1.17.0 &&
+LC_ALL=en_US.UTF-8 
+make && make install
 cd /sources
 
 # Fontconfig
 wget https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.15.0.tar.xz
-tar -xvJf fontconfig-2.15.0.tar.xz && cd fontconfig-2.15.0/
+tar -xvJf fontconfig-*.tar.xz && cd fontconfig-*/
 ./configure --prefix=/usr        \
             --sysconfdir=/etc    \
             --localstatedir=/var \
             --disable-docs       \
             --docdir=/usr/share/doc/fontconfig-2.15.0 &&
 make && make install
-install -v -dm755 \
-        /usr/share/{man/man{1,3,5},doc/fontconfig-2.15.0/fontconfig-devel} &&
-install -v -m644 fc-*/*.1         /usr/share/man/man1 &&
-install -v -m644 doc/*.3          /usr/share/man/man3 &&
+install -v -dm755 /usr/share/{man/man{1,3,5},doc/fontconfig-2.15.0/fontconfig-devel} &&
+install -v -m644 fc-*/*.1 /usr/share/man/man1 &&
+install -v -m644 doc/*.3 /usr/share/man/man3 &&
 install -v -m644 doc/fonts-conf.5 /usr/share/man/man5 &&
-install -v -m644 doc/fontconfig-devel/* \
-                                  /usr/share/doc/fontconfig-2.15.0/fontconfig-devel &&
-install -v -m644 doc/*.{pdf,sgml,txt,html} \
-                                  /usr/share/doc/fontconfig-2.15.0
+install -v -m644 doc/fontconfig-devel/* /usr/share/doc/fontconfig-2.15.0/fontconfig-devel &&
+install -v -m644 doc/*.{pdf,sgml,txt,html} /usr/share/doc/fontconfig-2.15.0
 cd /sources
 
 # Xorg libs
 cat > lib-7.md5 << "MD5"
-12344cd74a1eb25436ca6e6a2cf93097  xtrans-1.5.0.tar.xz
-5b8fa54e0ef94136b56f887a5e6cf6c9  libX11-1.8.10.tar.xz
-e59476db179e48c1fb4487c12d0105d1  libXext-1.3.6.tar.xz
-c5cc0942ed39c49b8fcd47a427bd4305  libFS-1.0.10.tar.xz
-b444a0e4c2163d1bbc7b046c3653eb8d  libICE-1.1.1.tar.xz
-ffa434ed96ccae45533b3d653300730e  libSM-1.2.4.tar.xz
-e613751d38e13aa0d0fd8e0149cec057  libXScrnSaver-1.2.4.tar.xz
-4ea21d3b5a36d93a2177d9abed2e54d4  libXt-1.3.0.tar.xz
-85edefb7deaad4590a03fccba517669f  libXmu-1.2.1.tar.xz
-05b5667aadd476d77e9b5ba1a1de213e  libXpm-3.5.17.tar.xz
-2a9793533224f92ddad256492265dd82  libXaw-1.0.16.tar.xz
-65b9ba1e9ff3d16c4fa72915d4bb585a  libXfixes-6.0.1.tar.xz
-af0a5f0abb5b55f8411cd738cf0e5259  libXcomposite-0.4.6.tar.xz
-ebf7fb3241ec03e8a3b2af72f03b4631  libXrender-0.9.11.tar.xz
-bf3a43ad8cb91a258b48f19c83af8790  libXcursor-1.2.2.tar.xz
-ca55d29fa0a8b5c4a89f609a7952ebf8  libXdamage-1.1.6.tar.xz
-8816cc44d06ebe42e85950b368185826  libfontenc-1.1.8.tar.xz
-66e03e3405d923dfaf319d6f2b47e3da  libXfont2-2.0.7.tar.xz
-cea0a3304e47a841c90fbeeeb55329ee  libXft-2.3.8.tar.xz
-89ac74ad6829c08d5c8ae8f48d363b06  libXi-1.8.1.tar.xz
-228c877558c265d2f63c56a03f7d3f21  libXinerama-1.1.5.tar.xz
-24e0b72abe16efce9bf10579beaffc27  libXrandr-1.5.4.tar.xz
-66c9e9e01b0b53052bb1d02ebf8d7040  libXres-1.2.2.tar.xz
-b62dc44d8e63a67bb10230d54c44dcb7  libXtst-1.2.5.tar.xz
-70bfdd14ca1a563c218794413f0c1f42  libXv-1.0.12.tar.xz
-a90a5f01102dc445c7decbbd9ef77608  libXvMC-1.0.14.tar.xz
-74d1acf93b83abeb0954824da0ec400b  libXxf86dga-1.1.6.tar.xz
-5b913dac587f2de17a02e17f9a44a75f  libXxf86vm-1.1.5.tar.xz
-57c7efbeceedefde006123a77a7bc825  libpciaccess-0.18.1.tar.xz
-229708c15c9937b6e5131d0413474139  libxkbfile-1.1.3.tar.xz
-faa74f7483074ce7d4349e6bdc237497  libxshmfence-1.3.2.tar.xz
-bdd3ec17c6181fd7b26f6775886c730d  libXpresent-1.0.1.tar.xz
+12344cd74a1eb25436ca6e6a2cf93097  xtrans-*.tar.xz
+5b8fa54e0ef94136b56f887a5e6cf6c9  libX11-*.tar.xz
+e59476db179e48c1fb4487c12d0105d1  libXext-*.tar.xz
+c5cc0942ed39c49b8fcd47a427bd4305  libFS-*.tar.xz
+b444a0e4c2163d1bbc7b046c3653eb8d  libICE-*.tar.xz
+ffa434ed96ccae45533b3d653300730e  libSM-*.tar.xz
+e613751d38e13aa0d0fd8e0149cec057  libXScrnSaver-*.tar.xz
+4ea21d3b5a36d93a2177d9abed2e54d4  libXt-*.tar.xz
+85edefb7deaad4590a03fccba517669f  libXmu-*.tar.xz
+05b5667aadd476d77e9b5ba1a1de213e  libXpm-*.tar.xz
+2a9793533224f92ddad256492265dd82  libXaw-*.tar.xz
+65b9ba1e9ff3d16c4fa72915d4bb585a  libXfixes-*.tar.xz
+af0a5f0abb5b55f8411cd738cf0e5259  libXcomposite-*.tar.xz
+ebf7fb3241ec03e8a3b2af72f03b4631  libXrender-*.tar.xz
+bf3a43ad8cb91a258b48f19c83af8790  libXcursor-*.tar.xz
+ca55d29fa0a8b5c4a89f609a7952ebf8  libXdamage-*.tar.xz
+8816cc44d06ebe42e85950b368185826  libfontenc-*.tar.xz
+66e03e3405d923dfaf319d6f2b47e3da  libXfont2-*.tar.xz
+cea0a3304e47a841c90fbeeeb55329ee  libXft-*.tar.xz
+89ac74ad6829c08d5c8ae8f48d363b06  libXi-*.tar.xz
+228c877558c265d2f63c56a03f7d3f21  libXinerama-*.tar.xz
+24e0b72abe16efce9bf10579beaffc27  libXrandr-*.tar.xz
+66c9e9e01b0b53052bb1d02ebf8d7040  libXres-*.tar.xz
+b62dc44d8e63a67bb10230d54c44dcb7  libXtst-*.tar.xz
+70bfdd14ca1a563c218794413f0c1f42  libXv-*.tar.xz
+a90a5f01102dc445c7decbbd9ef77608  libXvMC-*.tar.xz
+74d1acf93b83abeb0954824da0ec400b  libXxf86dga-*.tar.xz
+5b913dac587f2de17a02e17f9a44a75f  libXxf86vm-*.tar.xz
+57c7efbeceedefde006123a77a7bc825  libpciaccess-*.tar.xz
+229708c15c9937b6e5131d0413474139  libxkbfile-*.tar.xz
+faa74f7483074ce7d4349e6bdc237497  libxshmfence-*.tar.xz
+bdd3ec17c6181fd7b26f6775886c730d  libXpresent-*.tar.xz
 MD5
 mkdir lib &&
 cd lib &&
-grep -v '^#' ../lib-7.md5 | awk '{print $2}' | wget -i- -c \
-    -B https://www.x.org/pub/individual/lib/ &&
+grep -v '^#' ../lib-7.md5 | awk '{print $2}' | wget -i- -c -B https://www.x.org/pub/individual/lib/ &&
 md5sum -c ../lib-7.md5
 as_root()
 {
-  if   [ $EUID = 0 ];        then $*
-  elif [ -x /usr/bin/sudo ]; then sudo $*
-  else                            su -c \\"$*\\"
+  if   [ $EUID = 0 ]; then 
+      $*
+  elif [ -x /usr/bin/sudo ]; then 
+      sudo $*
+  else 
+      su -c \\"$*\\"
   fi
 }
 export -f as_root
@@ -2097,7 +2028,7 @@ cd /sources
 
 # Libxcvt
 wget https://www.x.org/pub/individual/lib/libxcvt-0.1.2.tar.xz
-tar -xvJf libxcvt-0.1.2.tar.xz && cd libxcvt-0.1.2
+tar -xvJf libxcvt-*.tar.xz && cd libxcvt-*/
 mkdir build && cd build
 meson setup --prefix=$XORG_PREFIX --buildtype=release .. &&
 ninja && ninja install
@@ -2105,49 +2036,49 @@ cd /sources
 
 # Xcb-util
 wget https://xcb.freedesktop.org/dist/xcb-util-0.4.1.tar.xz
-tar -xvJf xcb-util-0.4.1.tar.xz && cd xcb-util-0.4.1/
+tar -xvJf xcb-util-*.tar.xz && cd xcb-util-*/
 ./configure $XORG_CONFIG &&
 make && make install
 cd /sources
 
 # Xcb-util-image
 wget https://xcb.freedesktop.org/dist/xcb-util-image-0.4.1.tar.xz
-tar -xvJf xcb-util-image-0.4.1.tar.xz && cd xcb-util-image-0.4.1
+tar -xvJf xcb-util-image-*.tar.xz && cd xcb-util-image-*/
 ./configure $XORG_CONFIG &&
 make && make install
 cd /sources
 
 # Xcb-util-keysyms
 wget https://xcb.freedesktop.org/dist/xcb-util-keysyms-0.4.1.tar.xz
-tar -xvJf xcb-util-keysyms-0.4.1.tar.xz && cd xcb-util-keysyms-0.4.1/
+tar -xvJf xcb-util-keysyms-*.tar.xz && cd xcb-util-keysyms-*/
 ./configure $XORG_CONFIG &&
 make && make install
 cd /sources
 
 # Xcb-util-renderutil
 wget https://xcb.freedesktop.org/dist/xcb-util-renderutil-0.3.10.tar.xz
-tar -xvJf xcb-util-renderutil-0.3.10.tar.xz && cd xcb-util-renderutil-0.3.10/
+tar -xvJf xcb-util-renderutil-*.tar.xz && cd xcb-util-renderutil-*/
 ./configure $XORG_CONFIG &&
 make && make install
 cd /sources
 
 # Xcb-util-wm
 wget https://xcb.freedesktop.org/dist/xcb-util-wm-0.4.2.tar.xz
-tar -xvJf xcb-util-wm-0.4.2.tar.xz && cd xcb-util-wm-0.4.2/
+tar -xvJf xcb-util-wm-0.4.2.tar.xz && cd xcb-util-wm-*/
 ./configure $XORG_CONFIG &&
 make && make install
 cd /sources
 
 # Xcb-util-cursor
 wget https://xcb.freedesktop.org/dist/xcb-util-cursor-0.1.4.tar.xz
-tar -xvJf xcb-util-cursor-0.1.4.tar.xz && cd xcb-util-cursor-0.1.4
+tar -xvJf xcb-util-cursor-*.tar.xz && cd xcb-util-cursor-*/
 ./configure $XORG_CONFIG &&
 make && make install
 cd /sources
 
 # Mesa
 wget https://dri.freedesktop.org/libdrm/libdrm-2.4.122.tar.xz
-tar -xvJf libdrm-2.4.122.tar.xz && cd libdrm-2.4.122/
+tar -xvJf libdrm-*.tar.xz && cd libdrm-*/
 mkdir build && cd build
 meson setup --prefix=$XORG_PREFIX \
             --buildtype=release   \
@@ -2157,13 +2088,13 @@ meson setup --prefix=$XORG_PREFIX \
 ninja && ninja install
 cd /sources
 wget https://files.pythonhosted.org/packages/source/M/Mako/Mako-1.3.5.tar.gz
-tar -xvzf Mako-1.3.5.tar.gz && cd Mako-1.3.5
+tar -xvzf Mako-*.tar.gz && cd Mako-*/
 pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
 pip3 install --no-index --find-links=dist --no-cache-dir --no-user Mako
 cd /sources
 wget https://mesa.freedesktop.org/archive/mesa-24.1.5.tar.xz
 wget https://www.linuxfromscratch.org/patches/blfs/12.2/mesa-add_xdemos-2.patch
-tar -xvJf mesa-24.1.5.tar.xz && cd mesa-24.1.5
+tar -xvJf mesa-*.tar.xz && cd mesa-*/
 patch -Np1 -i ../mesa-add_xdemos-2.patch
 mkdir build && cd build
 meson setup ..                 \
@@ -2181,66 +2112,68 @@ cd /sources
 
 # Xbitmaps
 wget https://www.x.org/pub/individual/data/xbitmaps-1.1.3.tar.xz
+tar -xvJf xbitmaps-*.tar.xz && xbitmaps-*/
 ./configure $XORG_CONFIG && make install
 cd /sources
 
 # Xorg apps
 wget https://downloads.sourceforge.net/libpng/libpng-1.6.43.tar.xz
 wget https://downloads.sourceforge.net/sourceforge/libpng-apng/libpng-1.6.43-apng.patch.gz
-tar -xvJf libpng-1.6.43.tar.xz && cd libpng-1.6.43
+tar -xvJf libpng-*.tar.xz && cd libpng-*/
 gzip -cd ../libpng-1.6.43-apng.patch.gz | patch -p1
 ./configure --prefix=/usr --disable-static
 make && make install &&
 mkdir -v /usr/share/doc/libpng-1.6.43 &&
 cp -v README libpng-manual.txt /usr/share/doc/libpng-1.6.43
 cd /sources
-
-cat > app-7.md5 << "XAPPS"
-30f898d71a7d8e817302970f1976198c  iceauth-1.0.10.tar.xz
-7dcf5f702781bdd4aaff02e963a56270  mkfontscale-1.2.3.tar.xz
-05423bb42a006a6eb2c36ba10393de23  sessreg-1.1.3.tar.xz
-1d61c9f4a3d1486eff575bf233e5776c  setxkbmap-1.3.4.tar.xz
-9f7a4305f0e79d5a46c3c7d02df9437d  smproxy-1.0.7.tar.xz
+cat > app-7.md5 << "MD5"
+30f898d71a7d8e817302970f1976198c  iceauth-*.tar.xz
+7dcf5f702781bdd4aaff02e963a56270  mkfontscale-*.tar.xz
+05423bb42a006a6eb2c36ba10393de23  sessreg-*.tar.xz
+1d61c9f4a3d1486eff575bf233e5776c  setxkbmap-*.tar.xz
+9f7a4305f0e79d5a46c3c7d02df9437d  smproxy-*.tar.xz
 e96b56756990c56c24d2d02c2964456b  x11perf-1.6.1.tar.bz2
-595c941d9aff6f6d6e038c4e42dcff58  xauth-1.1.3.tar.xz
-82a90e2feaeab5c5e7610420930cc0f4  xcmsdb-1.0.6.tar.xz
-89e81a1c31e4a1fbd0e431425cd733d7  xcursorgen-1.0.8.tar.xz
-933e6d65f96c890f8e96a9f21094f0de  xdpyinfo-1.3.4.tar.xz
-34aff1f93fa54d6a64cbe4fee079e077  xdriinfo-1.0.7.tar.xz
-f29d1544f8dd126a1b85e2f7f728672d  xev-1.2.6.tar.xz
-41afaa5a68cdd0de7e7ece4805a37f11  xgamma-1.0.7.tar.xz
-48ac13856838d34f2e7fca8cdc1f1699  xhost-1.0.9.tar.xz
-8e4d14823b7cbefe1581c398c6ab0035  xinput-1.6.4.tar.xz
-83d711948de9ccac550d2f4af50e94c3  xkbcomp-1.4.7.tar.xz
-05ce1abd8533a400572784b1186a44d0  xkbevd-1.1.5.tar.xz
-07483ddfe1d83c197df792650583ff20  xkbutils-1.0.6.tar.xz
-f62b99839249ce9a7a8bb71a5bab6f9d  xkill-1.0.6.tar.xz
-da5b7a39702841281e1d86b7349a03ba  xlsatoms-1.1.4.tar.xz
-ab4b3c47e848ba8c3e47c021230ab23a  xlsclients-1.1.5.tar.xz
-ba2dd3db3361e374fefe2b1c797c46eb  xmessage-1.0.7.tar.xz
-0d66e07595ea083871048c4b805d8b13  xmodmap-1.0.11.tar.xz
-ab6c9d17eb1940afcfb80a72319270ae  xpr-1.2.0.tar.xz
-d050642a667b518cb3429273a59fa36d  xprop-1.2.7.tar.xz
-f822a8d5f233e609d27cc22d42a177cb  xrandr-1.5.2.tar.xzx
-c8629d5a0bc878d10ac49e1b290bf453  xrdb-1.2.2.tar.xz
-55003733ef417db8fafce588ca74d584  xrefresh-1.1.0.tar.xz
-18ff5cdff59015722431d568a5c0bad2  xset-1.2.5.tar.xz
-fa9a24fe5b1725c52a4566a62dd0a50d  xsetroot-1.1.3.tar.xz
-d698862e9cad153c5fefca6eee964685  xvinfo-1.1.5.tar.xz
-b0081fb92ae56510958024242ed1bc23  xwd-1.0.9.tar.xz
-c91201bc1eb5e7b38933be8d0f7f16a8  xwininfo-1.1.6.tar.xz
-5ff5dc120e8e927dc3c331c7fee33fc3  xwud-1.0.6.tar.xz
-XAPPS
+595c941d9aff6f6d6e038c4e42dcff58  xauth-*.tar.xz
+82a90e2feaeab5c5e7610420930cc0f4  xcmsdb-*.tar.xz
+89e81a1c31e4a1fbd0e431425cd733d7  xcursorgen-*.tar.xz
+933e6d65f96c890f8e96a9f21094f0de  xdpyinfo-*.tar.xz
+34aff1f93fa54d6a64cbe4fee079e077  xdriinfo-*.tar.xz
+f29d1544f8dd126a1b85e2f7f728672d  xev-*.tar.xz
+41afaa5a68cdd0de7e7ece4805a37f11  xgamma-*.tar.xz
+48ac13856838d34f2e7fca8cdc1f1699  xhost-*.tar.xz
+8e4d14823b7cbefe1581c398c6ab0035  xinput-*.tar.xz
+83d711948de9ccac550d2f4af50e94c3  xkbcomp-*.tar.xz
+05ce1abd8533a400572784b1186a44d0  xkbevd-*.tar.xz
+07483ddfe1d83c197df792650583ff20  xkbutils-*.tar.xz
+f62b99839249ce9a7a8bb71a5bab6f9d  xkill-*.tar.xz
+da5b7a39702841281e1d86b7349a03ba  xlsatoms-*.tar.xz
+ab4b3c47e848ba8c3e47c021230ab23a  xlsclients-*.tar.xz
+ba2dd3db3361e374fefe2b1c797c46eb  xmessage-*.tar.xz
+0d66e07595ea083871048c4b805d8b13  xmodmap-*.tar.xz
+ab6c9d17eb1940afcfb80a72319270ae  xpr-*.tar.xz
+d050642a667b518cb3429273a59fa36d  xprop-*.tar.xz
+f822a8d5f233e609d27cc22d42a177cb  xrandr-*.tar.xzx
+c8629d5a0bc878d10ac49e1b290bf453  xrdb-*.tar.xz
+55003733ef417db8fafce588ca74d584  xrefresh-*.tar.xz
+18ff5cdff59015722431d568a5c0bad2  xset-*.tar.xz
+fa9a24fe5b1725c52a4566a62dd0a50d  xsetroot-*.tar.xz
+d698862e9cad153c5fefca6eee964685  xvinfo-*.tar.xz
+b0081fb92ae56510958024242ed1bc23  xwd-*.tar.xz
+c91201bc1eb5e7b38933be8d0f7f16a8  xwininfo-*.tar.xz
+5ff5dc120e8e927dc3c331c7fee33fc3  xwud-*.tar.xz
+MD5
 mkdir app &&
 cd app &&
-grep -v '^#' ../app-7.md5 | awk '{print $2}' | wget -i- -c \
-    -B https://www.x.org/pub/individual/app/ &&
+grep -v '^#' ../app-7.md5 | awk '{print $2}' | wget -i- -c -B https://www.x.org/pub/individual/app/ &&
 md5sum -c ../app-7.md5
 as_root()
 {
-  if   [ $EUID = 0 ];        then $*
-  elif [ -x /usr/bin/sudo ]; then sudo $*
-  else                            su -c \\"$*\\"
+  if   [ $EUID = 0 ]; then 
+      $*
+  elif [ -x /usr/bin/sudo ]; then 
+      sudo $*
+  else 
+      su -c \\"$*\\"
   fi
 }
 export -f as_root
@@ -2261,37 +2194,39 @@ cd /sources
 
 # Luit
 wget https://invisible-mirror.net/archives/luit/luit-20240102.tgz
-tar -xvzf luit-20240102.tgz && cd luit-20240102
+tar -xvzf luit-*.tgz && cd luit-*/
 ./configure $XORG_CONFIG &&
 make && make install
 cd /sources
 
 # Xcursor-themes
 wget https://www.x.org/pub/individual/data/xcursor-themes-1.0.7.tar.xz
-tar -xvJf xcursor-themes-1.0.7.tar.xz && cd xcursor-themes-1.0.7
+tar -xvJf xcursor-themes-*.tar.xz && cd xcursor-themes-*/
 ./configure --prefix=/usr &&
 make && make install
 cd /sources
-cat > font-7.md5 << "XFONTS"
-a6541d12ceba004c0c1e3df900324642  font-util-1.4.1.tar.xz
-a56b1a7f2c14173f71f010225fa131f1  encodings-1.1.0.tar.xz
-79f4c023e27d1db1dfd90d041ce89835  font-alias-1.0.5.tar.xz
-546d17feab30d4e3abcf332b454f58ed  font-adobe-utopia-type1-1.0.5.tar.xz
-063bfa1456c8a68208bf96a33f472bb1  font-bh-ttf-1.0.4.tar.xz
-51a17c981275439b85e15430a3d711ee  font-bh-type1-1.0.4.tar.xz
-00f64a84b6c9886040241e081347a853  font-ibm-type1-1.0.4.tar.xz
-fe972eaf13176fa9aa7e74a12ecc801a  font-misc-ethiopic-1.0.5.tar.xz
-3b47fed2c032af3a32aad9acc1d25150  font-xfree86-type1-1.0.5.tar.xz
-XFONTS
+cat > font-7.md5 << "MD5"
+a6541d12ceba004c0c1e3df900324642  font-util-*.tar.xz
+a56b1a7f2c14173f71f010225fa131f1  encodings-*.tar.xz
+79f4c023e27d1db1dfd90d041ce89835  font-alias-*.tar.xz
+546d17feab30d4e3abcf332b454f58ed  font-adobe-utopia-type1-*.tar.xz
+063bfa1456c8a68208bf96a33f472bb1  font-bh-ttf-*.tar.xz
+51a17c981275439b85e15430a3d711ee  font-bh-type1-*.tar.xz
+00f64a84b6c9886040241e081347a853  font-ibm-type1-*.tar.xz
+fe972eaf13176fa9aa7e74a12ecc801a  font-misc-ethiopic-*.tar.xz
+3b47fed2c032af3a32aad9acc1d25150  font-xfree86-type1-*.tar.xz
+MD5
 mkdir font && cd font
-grep -v '^#' ../font-7.md5 | awk '{print $2}' | wget -i- -c \
-    -B https://www.x.org/pub/individual/font/ &&
+grep -v '^#' ../font-7.md5 | awk '{print $2}' | wget -i- -c -B https://www.x.org/pub/individual/font/ &&
 md5sum -c ../font-7.md5
 as_root()
 {
-  if   [ $EUID = 0 ];        then $*
-  elif [ -x /usr/bin/sudo ]; then sudo $*
-  else                            su -c \\"$*\\"
+  if   [ $EUID = 0 ]; then 
+      $*
+  elif [ -x /usr/bin/sudo ]; then 
+      sudo $*
+  else 
+      su -c \\"$*\\"
   fi
 }
 export -f as_root
@@ -2315,7 +2250,7 @@ cd /sources
 
 # XKeyboardConfig
 wget https://www.x.org/pub/individual/data/xkeyboard-config/xkeyboard-config-2.42.tar.xz
-tar -xvJf xkeyboard-config-2.42.tar.xz && cd xkeyboard-config-2.42
+tar -xvJf xkeyboard-config-*.tar.xz && cd xkeyboard-config-*/
 mkdir build && cd build
 meson setup --prefix=$XORG_PREFIX --buildtype=release ..
 ninja && ninja install
@@ -2323,18 +2258,18 @@ cd /sources
 
 # Xorg server
 wget https://www.cairographics.org/releases/pixman-0.43.4.tar.gz
-tar -xvzf pixman-0.43.4.tar.gz && cd pixman-0.43.4
+tar -xvzf pixman-*.tar.gz && cd pixman-*/
 mkdir build && cd build
 meson setup --prefix=$XORG_PREFIX --buildtype=release ..
 ninja && ninja install
 cd /sources
 wget https://www.x.org/pub/individual/xserver/xorg-server-21.1.13.tar.xz
 wget https://www.linuxfromscratch.org/patches/blfs/12.2/xorg-server-21.1.13-tearfree_backport-2.patch
-tar -xvJf xorg-server-21.1.13.tar.xz&& cd xorg-server-21.1.13
+tar -xvJf xorg-server-*.tar.xz&& cd xorg-server-*/
 cd /sources
 patch -Np1 -i ../xorg-server-21.1.13-tearfree_backport-2.patch
-kdir build && cd build
-eson setup ..               \
+mkdir build && cd build
+meson setup ..               \
       --prefix=$XORG_PREFIX  \
       --localstatedir=/var   \
       -D glamor=true         \
@@ -2349,7 +2284,7 @@ cat >> /etc/sysconfig/createfiles << "CRF"
 CRF
 cd /sources
 wget https://www.freedesktop.org/software/libevdev/libevdev-1.13.2.tar.xz
-tar -xvJf libevdev-1.13.2.tar.xz && cd libevdev-1.13.2
+tar -xvJf libevdev-*/.tar.xz && cd libevdev-*/
 mkdir build && cd build
 meson setup ..                  \
       --prefix=$XORG_PREFIX     \
@@ -2358,20 +2293,20 @@ meson setup ..                  \
 ninja && ninja install
 cd /sources
 wget https://bitmath.org/code/mtdev/mtdev-1.1.7.tar.bz2
-tar -xvjf mtdev-1.1.7.tar.bz2 && cd mtdev-1.1.7
+tar -xvjf mtdev-*.tar.bz2 && cd mtdev-*/
 ./configure --prefix=/usr --disable-static &&
 make && make install
 cd /sources
 
 # Xorg input drivers
 wget https://github.com/linuxwacom/xf86-input-wacom/releases/download/xf86-input-wacom-1.2.2/xf86-input-wacom-1.2.2.tar.bz2
-tar -xvjf xf86-input-wacom-1.2.2.tar.bz2 && cd xf86-input-wacom-1.2.2/
+tar -xvjf xf86-input-wacom-*/.tar.bz2 && cd xf86-input-wacom-*/
 ./configure $XORG_CONFIG --with-systemd-unit-dir=no &&
 make && make install
 cd ./sources
 
 wget https://gitlab.freedesktop.org/libinput/libinput/-/archive/1.26.1/libinput-1.26.1.tar.gz
-tar -xvzf libinput-1.26.1.tar.gz && cd libinput-1.26.1/
+tar -xvzf libinput-*.tar.gz && cd libinput-*/
 mkdir build && cd build
 meson setup ..                  \
       --prefix=$XORG_PREFIX     \
@@ -2384,20 +2319,20 @@ ninja && ninja install
 cd /sources
 
 wget https://www.x.org/pub/individual/driver/xf86-input-libinput-1.4.0.tar.xz
-tar -xvJf xf86-input-libinput-1.4.0.tar.xz && cd xf86-input-libinput-1.4.0
+tar -xvJf xf86-input-libinput-*.tar.xz && cd xf86-input-libinput-*/
 ./configure $XORG_CONFIG &&
 make && make install
 cd /sources
 
 wget https://www.x.org/pub/individual/driver/xf86-input-synaptics-1.9.2.tar.xz
-tar -xvJf xf86-input-synaptics-1.9.2.tar.xz && cd xf86-input-synaptics-1.9.2/
+tar -xvJf xf86-input-synaptics-*.tar.xz && cd xf86-input-synaptics-*/
 ./configure $XORG_CONFIG &&
 make && make install
 cd /sources
 
 # Twm
 wget https://www.x.org/pub/individual/app/twm-1.0.12.tar.xz
-tar -xvJf twm-1.0.12.tar.xz && cd twm-1.0.12/
+tar -xvJf twm-*.tar.xz && cd twm-*/
 sed -i -e '/^rcdir =/s,^\(rcdir = \).*,\1/etc/X11/app-defaults,' src/Makefile.in &&
 ./configure $XORG_CONFIG &&
 make && make install
@@ -2405,24 +2340,390 @@ cd /sources
 
 # Xterm
 wget https://kumisystems.dl.sourceforge.net/project/dejavu/dejavu/2.37/dejavu-fonts-ttf-2.37.tar.bz2?viasf=1
-tar -xvjf dejavu-fonts-ttf-2.37.tar.bz2 && cd dejavu-fonts-ttf-2.37/
+tar -xvjf dejavu-fonts-ttf-*.tar.bz2 && cd dejavu-fonts-ttf-*/
 install -v -d -m755 /usr/share/fonts/dejavu &&
 install -v -m644 ttf/*.ttf /usr/share/fonts/dejavu &&
 fc-cache -v /usr/share/fonts/dejavu
 cd /sources
 wget https://invisible-mirror.net/archives/xterm/xterm-393.tgz
-tar -xvzf xterm-393.tgz && cd xterm-393.tgz/
+tar -xvzf xterm-*.tgz && cd xterm-*/
 sed -i '/v0/{n;s/new:/new:kb=^?:/}' termcap &&
 printf '\tkbs=\\177,\n' >> terminfo &&
 TERMINFO=/usr/share/terminfo \
-./configure $XORG_CONFIG     \
-    --with-app-defaults=/etc/X11/app-defaults &&
+./configure $XORG_CONFIG --with-app-defaults=/etc/X11/app-defaults &&
 make && make install
 mkdir -pv /usr/share/applications &&
 cp -v *.desktop /usr/share/applications/
+cat >> /etc/X11/app-defaults/XTerm << "XTERM"
+*VT100*locale: true
+*VT100*faceName: Monospace
+*VT100*faceSize: 10
+*backarrowKeyIsErase: true
+*ptyInitialErase: true
+XTERM
 cd /sources
 
-# Bedrocking
+# Xclock
+wget https://www.x.org/pub/individual/app/xclock-1.1.1.tar.xz
+tar -xvJf xclock-*.tar.xz && cd xclock-*/
+./configure $XORG_CONFIG &&
+make && make install
+cd /sources
+
+# Xinit
+wget https://www.x.org/pub/individual/app/xinit-1.4.2.tar.xz
+tar -xvJf xinit-*.tar.xz && cd xinit-*/
+./configure $XORG_CONFIG --with-xinitdir=/etc/X11/app-defaults &&
+make && make install 
+ldconfig
+chmod u+s $XORG_PREFIX/bin/Xorg && sed -i '/$serverargs $vtarg/ s/serverargs/: #&/' $XORG_PREFIX/bin/startx
+cd /sources
+
+# Magic X11 SysRq 
+echo 4 > /proc/sys/kernel/sysrq
+
+# Xorg legacy
+cat > legacy.dat << "LEG"
+e09b61567ab4a4d534119bba24eddfb1 util/ bdftopcf-*.tar.xz
+20239f6f99ac586f10360b0759f73361 font/ font-adobe-100dpi-*.tar.xz
+2dc044f693ee8e0836f718c2699628b9 font/ font-adobe-75dpi-*.tar.xz
+2c939d5bd4609d8e284be9bef4b8b330 font/ font-jis-misc-*.tar.xz
+6300bc99a1e45fbbe6075b3de728c27f font/ font-daewoo-misc-*.tar.xz
+fe2c44307639062d07c6e9f75f4d6a13 font/ font-isas-misc-*.tar.xz
+145128c4b5f7820c974c8c5b9f6ffe94 font/ font-misc-misc-*.tar.xz
+LEG
+mkdir legacy && cd legacy
+grep -v '^#' ../legacy.dat | awk '{print $2$3}' | wget -i- -c -B https://www.x.org/pub/individual/ &&
+grep -v '^#' ../legacy.dat | awk '{print $1 " " $3}' > ../legacy.md5 &&
+md5sum -c ../legacy.md5
+as_root()
+{
+  if   [ $EUID = 0 ]; then 
+      $*
+  elif [ -x /usr/bin/sudo ]; then 
+      sudo $*
+  else 
+      su -c \\"$*\\"
+  fi
+}
+export -f as_root
+bash -e
+for package in $(grep -v '^#' ../legacy.md5 | awk '{print $2}')
+do
+    packagedir=${package%.tar.?z*}
+    tar -xf $package
+    pushd $packagedir
+      ./configure $XORG_CONFIG
+      make
+      as_root make install
+    popd
+    rm -rf $packagedir
+    as_root /sbin/ldconfig
+done
+exit
+cd /sources
+
+# Openbox (window manager)
+wget https://github.com/fribidi/fribidi/releases/download/v1.0.15/fribidi-1.0.15.tar.xz
+tar -xvJf fribidi-*.tar.xz && cd fribidi-*/
+mkdir build && cd build
+meson setup --prefix=/usr --buildtype=release .. &&
+ninja && ninja install
+cd /sources
+wget https://github.com/unicode-org/icu/releases/download/release-75-1/icu4c-75_1-src.tgz
+tar -xvzf icu*.tgz && cd icu*/
+cd source
+./configure --prefix=/usr &&
+make && make install
+cd /sources
+wget https://cmake.org/files/v3.30/cmake-3.30.2.tar.gz
+tar -xvzf cmake-* && cd cmake-*/
+sed -i '/"lib64"/s/64//' Modules/GNUInstallDirs.cmake
+./bootstrap --prefix=/usr        \
+            --system-libs        \
+            --mandir=/share/man  \
+            --no-system-jsoncpp  \
+            --no-system-cppdap   \
+            --no-system-librhash \
+            --docdir=/share/doc/cmake-3.30.2 &&
+make && make install
+cd /sources
+wget https://github.com/silnrsi/graphite/releases/download/1.3.14/graphite2-1.3.14.tgz
+tar -xvzf graphite2-imlib2-*.tgz && cd graphite2-*/
+sed -i '/cmptest/d' tests/CMakeLists.txt
+mkdir build && cd build
+cmake -D CMAKE_INSTALL_PREFIX=/usr .. &&
+make && make docs
+make install
+install -v -d -m755 /usr/share/doc/graphite2-1.3.14 &&
+cp -v -f doc/{GTF,manual}.html /usr/share/doc/graphite2-1.3.14 &&
+cp -v -f doc/{GTF,manual}.pdf /usr/share/doc/graphite2-1.3.14   
+wget https://github.com/harfbuzz/harfbuzz/releases/download/9.0.0/harfbuzz-9.0.0.tar.xz
+tar -xvJf harfbuzz-*.tar.xz && cd harfbuzz-*/
+mkdir build && cd build
+meson setup ..             \
+      --prefix=/usr        \
+      --buildtype=release  \
+      -D graphite2=enabled &&
+ninja && ninja install
+cd /sources/freetype*/
+sed -ri "s:.*(AUX_MODULES.*valid):\1:" modules.cfg &&
+sed -r "s:.*(#.*SUBPIXEL_RENDERING) .*:\1:" -i include/freetype/config/ftoption.h  &&
+./configure --prefix=/usr --enable-freetype-config --disable-static &&
+make && make install
+cp -v -R docs -T /usr/share/doc/freetype-2.13.3 &&
+rm -v /usr/share/doc/freetype-2.13.3/freetype-config.1
+cd /sources
+wget https://download.gnome.org/sources/pango/1.54/pango-1.54.0.tar.xz
+tar -xvJf pango*.tar.xz/
+mkdir build && cd build
+meson setup --prefix=/usr --buildtype=release --wrap-mode=nofallback \
+            .. &&
+ninja && ninja install
+cd /sources
+wget https://www.linuxfromscratch.org/patches/blfs/12.2/docbook-xsl-nons-1.79.2-stack_fix-1.patch
+wget https://github.com/docbook/xslt10-stylesheets/releases/download/release/1.79.2/docbook-xsl-nons-1.79.2.tar.bz2
+tar -xvjf docbook-*.tar.bs2 && cd docbook-*/
+patch -Np1 -i ../docbook-xsl-nons-1.79.2-stack_fix-1.patch
+install -v -m755 -d /usr/share/xml/docbook/xsl-stylesheets-nons-1.79.2
+cp -v -R VERSION assembly common eclipse epub epub3 extensions fo        \
+         highlighting html htmlhelp images javahelp lib manpages params  \
+         profiling roundtrip slides template tests tools webhelp website \
+         xhtml xhtml-1_1 xhtml5 /usr/share/xml/docbook/xsl-stylesheets-nons-1.79.2
+ln -s VERSION /usr/share/xml/docbook/xsl-stylesheets-nons-1.79.2/VERSION.xsl &&
+install -v -m644 -D README /usr/share/doc/docbook-xsl-nons-1.79.2/README.txt &&
+install -v -m644 RELEASE-NOTES* NEWS* /usr/share/doc/docbook-xsl-nons-1.79.2
+if [ ! -d /etc/xml ]; then install -v -m755 -d /etc/xml; fi &&
+if [ ! -f /etc/xml/catalog ]; then
+    xmlcatalog --noout --create /etc/xml/catalog
+fi &&
+
+xmlcatalog --noout --add "rewriteSystem" \
+           "http://cdn.docbook.org/release/xsl-nons/1.79.2" \
+           "/usr/share/xml/docbook/xsl-stylesheets-nons-1.79.2" \
+    /etc/xml/catalog &&
+
+xmlcatalog --noout --add "rewriteSystem" \
+           "https://cdn.docbook.org/release/xsl-nons/1.79.2" \
+           "/usr/share/xml/docbook/xsl-stylesheets-nons-1.79.2" \
+    /etc/xml/catalog &&
+
+xmlcatalog --noout --add "rewriteURI" \
+           "http://cdn.docbook.org/release/xsl-nons/1.79.2" \
+           "/usr/share/xml/docbook/xsl-stylesheets-nons-1.79.2" \
+    /etc/xml/catalog &&
+
+xmlcatalog --noout --add "rewriteURI" \
+           "https://cdn.docbook.org/release/xsl-nons/1.79.2" \
+           "/usr/share/xml/docbook/xsl-stylesheets-nons-1.79.2" \
+    /etc/xml/catalog &&
+
+xmlcatalog --noout --add "rewriteSystem" \
+           "http://cdn.docbook.org/release/xsl-nons/current" \
+           "/usr/share/xml/docbook/xsl-stylesheets-nons-1.79.2" \
+    /etc/xml/catalog &&
+
+xmlcatalog --noout --add "rewriteSystem" \
+           "https://cdn.docbook.org/release/xsl-nons/current" \
+           "/usr/share/xml/docbook/xsl-stylesheets-nons-1.79.2" \
+    /etc/xml/catalog &&
+
+xmlcatalog --noout --add "rewriteURI" \
+           "http://cdn.docbook.org/release/xsl-nons/current" \
+           "/usr/share/xml/docbook/xsl-stylesheets-nons-1.79.2" \
+    /etc/xml/catalog &&
+
+xmlcatalog --noout --add "rewriteURI" \
+           "https://cdn.docbook.org/release/xsl-nons/current" \
+           "/usr/share/xml/docbook/xsl-stylesheets-nons-1.79.2" \
+    /etc/xml/catalog &&
+
+xmlcatalog --noout --add "rewriteSystem" \
+           "http://docbook.sourceforge.net/release/xsl/current" \
+           "/usr/share/xml/docbook/xsl-stylesheets-nons-1.79.2" \
+    /etc/xml/catalog &&
+
+xmlcatalog --noout --add "rewriteURI" \
+           "http://docbook.sourceforge.net/release/xsl/current" \
+           "/usr/share/xml/docbook/xsl-stylesheets-nons-1.79.2" \
+    /etc/xml/catalog
+cd /sources
+
+wget  https://www.linuxfromscratch.org/patches/blfs/12.2/libxml2-2.13.3-upstream_fix-2.patch
+wget https://download.gnome.org/sources/libxml2/2.13/libxml2-2.13.3.tar.xz
+tar -xvJf libxml-*.tar.xz && libxml-*/
+patch -Np1 -i ../libxml2-2.13.3-upstream_fix-2.patch
+./configure --prefix=/usr           \
+            --sysconfdir=/etc       \
+            --disable-static        \
+            --with-history          \
+            --with-icu              \
+            PYTHON=/usr/bin/python3 \
+            --docdir=/usr/share/doc/libxml2-2.13.3 &&
+make && make install
+rm -vf /usr/lib/libxml2.la &&
+sed '/libs=/s/xml2.*/xml2"/' -i /usr/bin/xml2-config
+cd /sources
+wget https://download.gnome.org/sources/libxslt/1.1/libxslt-1.1.42.tar.xz
+tar -xvJf libxslt-*.tar.xz && cd libxslt-*/
+./configure --prefix=/usr                          \
+            --disable-static                       \
+            --docdir=/usr/share/doc/libxslt-1.1.42 &&
+make && make install
+cd /sources
+https://www.linuxfromscratch.org/patches/blfs/12.2/unzip-6.0-consolidated_fixes-1.patch
+wget https://www.linuxfromscratch.org/patches/blfs/12.2/unzip-6.0-gcc14-1.patch
+wget https://downloads.sourceforge.net/infozip/unzip60.tar.gz
+tar -xvzf unzip-*.tar.gz && unzip-*/
+patch -Np1 -i ../unzip-6.0-consolidated_fixes-1.patch
+patch -Np1 -i ../unzip-6.0-gcc14-1.patch
+make -f unix/Makefile generic && make prefix=/usr MANDIR=/usr/share/man/man1 -f unix/Makefile install
+cd /sources
+wget https://www.docbook.org/xml/4.5/docbook-xml-4.5.zip
+mkdir docbook-xml && cd docbook-xml
+unzip ../docbook-xml-*.zip
+install -v -d -m755 /usr/share/xml/docbook/xml-dtd-4.5 &&
+install -v -d -m755 /etc/xml &&
+cp -v -af --no-preserve=ownership docbook.cat *.dtd ent/ *.mod /usr/share/xml/docbook/xml-dtd-4.5
+if [ ! -e /etc/xml/docbook ]; then
+    xmlcatalog --noout --create /etc/xml/docbook
+fi &&
+xmlcatalog --noout --add "public" \
+    "-//OASIS//DTD DocBook XML V4.5//EN" \
+    "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" \
+    /etc/xml/docbook &&
+xmlcatalog --noout --add "public" \
+    "-//OASIS//DTD DocBook XML CALS Table Model V4.5//EN" \
+    "file:///usr/share/xml/docbook/xml-dtd-4.5/calstblx.dtd" \
+    /etc/xml/docbook &&
+xmlcatalog --noout --add "public" \
+    "-//OASIS//DTD XML Exchange Table Model 19990315//EN" \
+    "file:///usr/share/xml/docbook/xml-dtd-4.5/soextblx.dtd" \
+    /etc/xml/docbook &&
+xmlcatalog --noout --add "public" \
+    "-//OASIS//ELEMENTS DocBook XML Information Pool V4.5//EN" \
+    "file:///usr/share/xml/docbook/xml-dtd-4.5/dbpoolx.mod" \
+    /etc/xml/docbook &&
+xmlcatalog --noout --add "public" \
+    "-//OASIS//ELEMENTS DocBook XML Document Hierarchy V4.5//EN" \
+    "file:///usr/share/xml/docbook/xml-dtd-4.5/dbhierx.mod" \
+    /etc/xml/docbook &&
+xmlcatalog --noout --add "public" \
+    "-//OASIS//ELEMENTS DocBook XML HTML Tables V4.5//EN" \
+    "file:///usr/share/xml/docbook/xml-dtd-4.5/htmltblx.mod" \
+    /etc/xml/docbook &&
+xmlcatalog --noout --add "public" \
+    "-//OASIS//ENTITIES DocBook XML Notations V4.5//EN" \
+    "file:///usr/share/xml/docbook/xml-dtd-4.5/dbnotnx.mod" \
+    /etc/xml/docbook &&
+xmlcatalog --noout --add "public" \
+    "-//OASIS//ENTITIES DocBook XML Character Entities V4.5//EN" \
+    "file:///usr/share/xml/docbook/xml-dtd-4.5/dbcentx.mod" \
+    /etc/xml/docbook &&
+xmlcatalog --noout --add "public" \
+    "-//OASIS//ENTITIES DocBook XML Additional General Entities V4.5//EN" \
+    "file:///usr/share/xml/docbook/xml-dtd-4.5/dbgenent.mod" \
+    /etc/xml/docbook &&
+xmlcatalog --noout --add "rewriteSystem" \
+    "http://www.oasis-open.org/docbook/xml/4.5" \
+    "file:///usr/share/xml/docbook/xml-dtd-4.5" \
+    /etc/xml/docbook &&
+xmlcatalog --noout --add "rewriteURI" \
+    "http://www.oasis-open.org/docbook/xml/4.5" \
+    "file:///usr/share/xml/docbook/xml-dtd-4.5" \
+    /etc/xml/docbook
+if [ ! -e /etc/xml/catalog ]; then
+    xmlcatalog --noout --create /etc/xml/catalog
+fi &&
+xmlcatalog --noout --add "delegatePublic" \
+    "-//OASIS//ENTITIES DocBook XML" \
+    "file:///etc/xml/docbook" \
+    /etc/xml/catalog &&
+xmlcatalog --noout --add "delegatePublic" \
+    "-//OASIS//DTD DocBook XML" \
+    "file:///etc/xml/docbook" \
+    /etc/xml/catalog &&
+xmlcatalog --noout --add "delegateSystem" \
+    "http://www.oasis-open.org/docbook/" \
+    "file:///etc/xml/docbook" \
+    /etc/xml/catalog &&
+xmlcatalog --noout --add "delegateURI" \
+    "http://www.oasis-open.org/docbook/" \
+    "file:///etc/xml/docbook" \
+    /etc/xml/catalog
+wget https://pagure.io/xmlto/archive/0.0.29/xmlto-0.0.29.tar.gz
+tar -xvzf xmlto-*.tar.gz && xmlto-*/
+autoreconf -fiv && LINKS="/usr/bin/links" 
+./configure --prefix=/usr
+make && make install
+cd /sources
+wget https://sourceforge.net/projects/giflib/files/giflib-5.2.2.tar.gz
+wget https://www.linuxfromscratch.org/patches/blfs/12.2/giflib-5.2.2-upstream_fixes-1.patch
+tar -xvzf giflib-*.tar.gz && giflib-*/
+patch -Np1 -i ../giflib-*.patch
+cp pic/gifgrid.gif doc/giflib-logo.gif
+make && make PREFIX=/usr install
+rm -fv /usr/lib/libgif.a &&
+find doc \( -name Makefile\* -o -name \*.1 -o -name \*.xml \) -exec rm -v {} \; &&
+install -v -dm755 /usr/share/doc/giflib-5.2.2 &&
+cp -v -R doc/* /usr/share/doc/giflib-5.2.2
+wget https://downloads.sourceforge.net/enlightenment/imlib2-1.12.3.tar.xz
+tar -xvzf imlib2-*.tar.xz && cd imlib2-*/
+./configure --prefix=/usr --disable-static &&
+make && make install
+cd /sources
+wget https://www.imagemagick.org/archive/releases/ImageMagick-7.1.1-36.tar.xz
+tar -xvJf ImageMagick-*.tar.xz cd cd Image-*/
+./configure --prefix=/usr     \
+            --sysconfdir=/etc \
+            --enable-hdri     \
+            --with-modules    \
+            --with-perl       \
+            --disable-static  &&
+make && make DOCUMENTATION_PATH=/usr/share/doc/imagemagick-7.1.1 install
+cd /sources
+wget http://openbox.org/dist/openbox/openbox-3.6.1.tar.gz
+tar -xvzf openbox-*.tar.gz && cd openbox*/
+./configure --prefix=/usr     \
+            --sysconfdir=/etc \
+            --disable-static  \
+            --docdir=/usr/share/doc/openbox-3.6.1 &&
+make && make install
+rm -v /usr/share/xsessions/openbox-{gnome,kde}.desktop
+cp -rf /etc/xdg/openbox ~/.config
+echo openbox > ~/.xinitrc
+cd /sources
+wget https://www.linuxfromscratch.org/patches/blfs/12.2/ffmpeg-7.0.2-chromium_method-1.patch
+wget https://ffmpeg.org/releases/ffmpeg-7.0.2.tar.xz
+tar -xvJf ffmpeg-*.tar.xz && ffmpeg-*/
+patch -Np1 -i ../ffmpeg-7.0.2-chromium_method-1.patch
+./configure --prefix=/usr        \
+            --enable-gpl         \
+            --enable-version3    \
+            --enable-nonfree     \
+            --disable-static     \
+            --enable-shared      \
+            --disable-debug      \
+            --enable-libaom      \
+            --enable-libass      \
+            --enable-libfdk-aac  \
+            --enable-libfreetype \
+            --enable-libmp3lame  \
+            --enable-libopus     \
+            --enable-libvorbis   \
+            --enable-libvpx      \
+            --enable-libx264     \
+            --enable-libx265     \
+            --enable-openssl     \
+            --ignore-tests=enhanced-flv-av1 \
+            --docdir=/usr/share/doc/ffmpeg-7.0.2 &&
+make && gcc tools/qt-faststart.c -o tools/qt-faststart
+make install && install -v -m755 tools/qt-faststart /usr/bin &&
+install -v -m755 -d /usr/share/doc/ffmpeg-7.0.2 &&
+install -v -m644 doc/*.txt /usr/share/doc/ffmpeg-7.0.2
+cd /sources
+
+# Bedrock (Optional)
 read -p "Do you want to install bedrock linux? [y/N]: " bedrock_choice
 if [[ "$bedrock_choice" == "y" ]]; then
     wget https://github.com/libfuse/libfuse/releases/download/fuse-3.16.2/fuse-3.16.2.tar.gz
@@ -2497,8 +2798,6 @@ else
     echo "/etc/default/grub not found. Please configure your bootloader manually to include $MICROCODE_PATH."
     exit 1
 fi
-
-
 
 EOF
 
