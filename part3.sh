@@ -2721,7 +2721,7 @@ make && gcc tools/qt-faststart.c -o tools/qt-faststart
 make install && install -v -m755 tools/qt-faststart /usr/bin &&
 install -v -m755 -d /usr/share/doc/ffmpeg-7.0.2 &&
 install -v -m644 doc/*.txt /usr/share/doc/ffmpeg-7.0.2
-cd /sources
+cd /
 
 # Bedrock (Optional)
 read -p "Do you want to install bedrock linux? [y/N]: " bedrock_choice
