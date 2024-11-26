@@ -2757,7 +2757,7 @@ GCONF
 sudo emerge --sync
 eselect profile list | less
 read -p "Enter in the profile you wish to install" EPROF
-sudo eselect profile set $EPROF
+sudo eselect profile set "$EPROF"
 emerge --getbinpkg --ask --changed-use --deep @world
 cd /
 
