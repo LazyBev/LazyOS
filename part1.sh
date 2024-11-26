@@ -209,7 +209,7 @@ echo "Setting up base system..." && sleep 2
 
 mkdir -v $LFS/sources && ls $LFS
 chmod -v a+wt $LFS/sources
-
+wget https://www.linuxfromscratch.org/lfs/view/stable/md5sums --directory-prefix=$LFS/sources
 wget https://download.savannah.gnu.org/releases/acl/acl-2.3.2.tar.xz --directory-prefix=$LFS/sources
 wget https://download.savannah.gnu.org/releases/attr/attr-2.5.2.tar.gz --directory-prefix=$LFS/sources
 wget https://ftp.gnu.org/gnu/autoconf/autoconf-2.72.tar.xz --directory-prefix=$LFS/sources
@@ -304,8 +304,6 @@ wget https://www.linuxfromscratch.org/patches/lfs/12.2/glibc-2.40-fhs-1.patch --
 wget https://www.linuxfromscratch.org/patches/lfs/12.2/kbd-2.6.4-backspace-1.patch --directory-prefix=$LFS/sources
 wget https://www.linuxfromscratch.org/patches/lfs/12.2/sysvinit-3.10-consolidated-1.patch --directory-prefix=$LFS/sources
 chown root:root $LFS/sources/*
-
-wget https://www.linuxfromscratch.org/lfs/view/stable/md5sums --directory-prefix=$LFS/sources
 
 pushd $LFS/sources
     md5sum -c md5sums
