@@ -2721,6 +2721,44 @@ make && gcc tools/qt-faststart.c -o tools/qt-faststart
 make install && install -v -m755 tools/qt-faststart /usr/bin &&
 install -v -m755 -d /usr/share/doc/ffmpeg-7.0.2 &&
 install -v -m644 doc/*.txt /usr/share/doc/ffmpeg-7.0.2
+cd /sources
+
+# Package manager
+git clone https://github.com/RsyncProject/rsync.git
+cd rysnc & python3 -mpip install --user commonmark
+./prepare-source fetchgen &&  ./configure
+make && make install
+cd /sources 
+sudo mkdir -p /etc/portage /var/db/repos/gentoo /var/cache/distfiles /var/tmp/portage 
+sudo chown -R root:root /etc/portage /var/db/repos/gentoo /var/cache/distfiles /var/tmp/portage
+sudo chmod -R 755 /etc/portage /var/db/repos/gentoo sudo chmod -R 775 /var/cache/distfiles /var/tmp/portage 
+git clone https://gitweb.gentoo.org/proj/portage.git /tmp/portage && cd /tmp/portage
+meson setup build sudo ninja -C build install && touch /etc/portage/make.conf
+sudo tee /etc/portage/make.conf > /dev/null << 'PCONF'
+CHOST=“x86_64-pc-linux-gnu” 
+CFLAGS=”-O2 -pipe” 
+CXXFLAGS=”${CFLAGS}” 
+MAKEOPTS=”-j${nproc}”
+PORTDIR=”/var/db/repos/gentoo”
+DISTDIR=”/var/cache/distfiles” 
+PKGDIR=”/var/cache/binpkgs” 
+ACCEPT_LICENSE="*"
+VIDEO_CARDS="intel nouveau radeon radeonsi"
+USE=“bindist”
+PCONF
+sudo mkdir -p /etc/portage/repos.conf
+sudo tee /etc/portage/repos.conf/gentoo.conf > /dev/null << 'GCONF'
+[gentoo]
+location = /var/db/repos/gentoo
+sync-type = rsync
+sync-uri = rsync://rsync.gentoo.org/gentoo-portage
+auto-sync = yes
+GCONF
+sudo emerge --sync
+eselect profile list | less
+read -p "Enter in the profile you wish to install" EPROF
+sudo eselect profile set $EPROF
+emerge --getbinpkg --ask --changed-use --deep @world
 cd /
 
 # Bedrock (Optional)
